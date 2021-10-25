@@ -15,6 +15,7 @@
 
 * Add I/O to AntTweakBar menu ?
 * Replace AntTweakBar with Dear ImGui (which is already bundled with libigl) ?
+* replace glut with glfw ?
 
 ## Contributing
 

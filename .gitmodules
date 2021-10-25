@@ -1,0 +1,9 @@
+[submodule "lib/vcglib"]
+	path = lib/vcglib
+	url = https://github.com/cnr-isti-vclab/vcglib
+[submodule "lib/libigl"]
+	path = lib/libigl
+	url = https://github.com/libigl/libigl
+[submodule "lib/Directional"]
+	path = lib/Directional
+	url = https://github.com/avaxman/Directional.git
