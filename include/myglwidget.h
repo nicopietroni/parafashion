@@ -52,7 +52,9 @@ class MyGLWidget : public QGLWidget
     Q_OBJECT
 
 public:
-    bool hasToPick,Has_Shift,hasDoubleClick;
+    bool hasDoubleClick;
+    bool user_is_picking = false;
+    bool spacebar_being_pressed = false;
     int PickX;
     int PickY;
 
@@ -62,7 +64,7 @@ public:
 
 
     QSize sizeHint() const {
-      return QSize(1400, 1200);
+      return QSize(1400, 1200); // window size
   };
 
 protected:

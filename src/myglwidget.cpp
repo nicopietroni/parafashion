@@ -441,8 +441,8 @@ void TW_CALL BatchProcess(void *)
 void SetFieldBarSizePosition(QWidget *w)
 {
     int params[2];
-    params[0] = QTDeviceWidth(w) / 2.0;
-    params[1] = QTDeviceHeight(w) ;
+    params[0] = QTDeviceWidth(w) / 4.0; // AntTweakBar Menu size here
+    params[1] = QTDeviceHeight(w) / 2.0 ;
     TwSetParam(barFashion, NULL, "size", TW_PARAM_INT32, 2, params);
     params[0] = QTLogicalToDevice(w, 10);
     params[1] = 30;//QTDeviceHeight(w) - params[1] - QTLogicalToDevice(w, 10);
@@ -452,9 +452,9 @@ void SetFieldBarSizePosition(QWidget *w)
 enum FieldAnimMode{FANone,FACurvature,FAStretchCompress};
 FieldAnimMode FAnimMode=FANone;
 
-void InitBar(QWidget *w)
+void InitBar(QWidget *w) // AntTweakBar menu
 {
-    barFashion = TwNewBar("QuadWild");
+    barFashion = TwNewBar("parafashion menu");
 
     SetFieldBarSizePosition(w);
 
@@ -624,8 +624,6 @@ MyGLWidget::MyGLWidget(QWidget *parent)
         std::cout<<"Texture Loaded "<<std::endl;
 
     hasFrames=false;
-    hasToPick=false;
-    Has_Shift=false;
     hasDoubleClick=false;
 
     if (pathFrames!=std::string(""))
@@ -845,7 +843,7 @@ void MyGLWidget::paintGL ()
     }
 
 
-    if  (hasToPick && Has_Shift)
+    if  (user_is_picking)
     {
         GPath.GLAddPoint(vcg::Point2i(PickX,PickY));
         GPath.GlDrawLastPath();
@@ -932,13 +930,8 @@ void MyGLWidget::keyReleaseEvent (QKeyEvent * e)
     if (e->key () == Qt::Key_Alt) track.ButtonUp (QT2VCG (Qt::NoButton, Qt::AltModifier));
     if (e->key () == Qt::Key_Space)
     {
-        hasToPick=false;
-        Has_Shift=false;
-        if (hasToPick)
-        {
-            //TPath.AddSharpConstraints(GPath.PickedPoints);
-            DoBatchProcess();
-        }
+        spacebar_being_pressed = false;
+        return; // This gets called often when spacebar is pressed... don't updateGL 
     }
     updateGL ();
 }
@@ -950,7 +943,9 @@ void MyGLWidget::keyPressEvent (QKeyEvent * e)
     if (e->key () == Qt::Key_Control) track.ButtonDown (QT2VCG (Qt::NoButton, Qt::ControlModifier));
     if (e->key () == Qt::Key_Shift)  track.ButtonDown (QT2VCG (Qt::NoButton, Qt::ShiftModifier));
     if (e->key () == Qt::Key_Alt)  track.ButtonDown (QT2VCG (Qt::NoButton, Qt::AltModifier));
-    if (e->key () == Qt::Key_Space)  Has_Shift=true;
+    if (e->key () == Qt::Key_Space) {
+        spacebar_being_pressed = true;
+    } 
 
     TwKeyPressQt(e);
     updateGL ();
@@ -964,14 +959,12 @@ void MyGLWidget::mousePressEvent (QMouseEvent * e)
         setFocus ();
         track.MouseDown(QT2VCG_X(this, e), QT2VCG_Y(this, e), QT2VCG (e->button (), e->modifiers ()));
 
-
         //if(e->button() == Qt::RightButton)
         //        if (QGuiApplication::keyboardModifiers().testFlag(Qt::ShiftModifier))
         //        {
-        if (Has_Shift)
+        if (spacebar_being_pressed)
         {
-
-            hasToPick=true;
+            user_is_picking = true;
             xMouse=QT2VCG_X(this, e);
             yMouse=QT2VCG_Y(this, e);
             PickX=xMouse;
@@ -986,7 +979,7 @@ void MyGLWidget::mousePressEvent (QMouseEvent * e)
 void MyGLWidget::mouseMoveEvent (QMouseEvent * e)
 {
     if (e->buttons ()) {
-        if (hasToPick && Has_Shift)
+        if (user_is_picking)
         {
             xMouse=QT2VCG_X(this, e);
             yMouse=QT2VCG_Y(this, e);
@@ -1023,10 +1016,9 @@ void MyGLWidget::mouseReleaseEvent (QMouseEvent * e)
 {
     track.MouseUp(QT2VCG_X(this, e), QT2VCG_Y(this, e), QT2VCG(e->button (), e->modifiers ()));
     TwMouseReleaseQt(this,e);
-    if (hasToPick)
+    if (user_is_picking)
     {
-        hasToPick=false;
-        Has_Shift=false;
+        user_is_picking = false;
         //TPath.AddSharpConstraints(GPath.PickedPoints);
         //TPath.AddSharpConstraints();
         DoBatchProcess();

@@ -3,6 +3,8 @@
 
 ## CMakeLists project
 
+26.10.2021: for now, a few libs must be hard copied in `/lib`, we'll add them as submodule later. (AntTweakBar, field_tracing)
+
 ```
 git submodule update --init --recursive
 
