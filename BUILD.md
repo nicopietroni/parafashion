@@ -1,16 +1,24 @@
 
-# Install instructions
+# Build instructions
 
 ## CMakeLists project
 
 ```
 git submodule update --init --recursive
+
+# Compile AntTweakBar
+cd lib/AntTweakBar/src
+make -j
+cd ../../..
+
 mkdir build
 cd build
 cmake ..
 make -j parafashion
 ./parafashion
 ```
+
+Then run with e.g. `./parafashion ../data/leggins/leggins.ply ../data/leggins/leggins.ply`
 
 ## From Nico's Parafashion
 

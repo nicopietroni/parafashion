@@ -7,3 +7,6 @@
 [submodule "lib/Directional"]
 	path = lib/Directional
 	url = https://github.com/avaxman/Directional.git
+[submodule "glew"]
+	path = lib/glew-cmake
+	url = https://github.com/Perlmint/glew-cmake

@@ -1,7 +1,7 @@
 #include <QApplication>
 #include <QDesktopWidget>
 #include <GL/glew.h>
-#include "glwidget.h"
+#include "myglwidget.h"
 #include <wrap/qt/anttweakbarMapper.h>
 #include <QWindow>
 #include <QTextStream>
@@ -44,7 +44,7 @@ int main(int argc, char *argv[])
         std::cout <<"Loading Frames "<< pathFrames << std::endl;
     }
 
-    GLWidget window;
+    MyGLWidget window;
 
     window.show();
     return app.exec();

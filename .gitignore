@@ -1,3 +1,6 @@
 .DS_Store
-*.o
 build/
+lib/AntTweakBar/*
+lib/field_tracing/*
+lib/glew_no_cmake/*
+.vscode/*

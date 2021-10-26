@@ -6,7 +6,7 @@
 ** WARNING! All changes made in this file will be lost!
 *****************************************************************************/
 
-#include "glwidget.h"
+#include "myglwidget.h"
 #include <QtCore/qbytearray.h>
 #include <QtCore/qmetatype.h>
 #if !defined(Q_MOC_OUTPUT_REVISION)
@@ -65,10 +65,10 @@ static const uint qt_meta_data_GLWidget[] = {
        0        // eod
 };
 
-void GLWidget::qt_static_metacall(QObject *_o, QMetaObject::Call _c, int _id, void **_a)
+void MyGLWidget::qt_static_metacall(QObject *_o, QMetaObject::Call _c, int _id, void **_a)
 {
     if (_c == QMetaObject::InvokeMetaMethod) {
-        auto *_t = static_cast<GLWidget *>(_o);
+        auto *_t = static_cast<MyGLWidget *>(_o);
         Q_UNUSED(_t)
         switch (_id) {
         case 0: _t->UpdateRot(); break;
@@ -79,7 +79,7 @@ void GLWidget::qt_static_metacall(QObject *_o, QMetaObject::Call _c, int _id, vo
     Q_UNUSED(_a);
 }
 
-QT_INIT_METAOBJECT const QMetaObject GLWidget::staticMetaObject = { {
+QT_INIT_METAOBJECT const QMetaObject MyGLWidget::staticMetaObject = { {
     &QGLWidget::staticMetaObject,
     qt_meta_stringdata_GLWidget.data,
     qt_meta_data_GLWidget,
@@ -89,12 +89,12 @@ QT_INIT_METAOBJECT const QMetaObject GLWidget::staticMetaObject = { {
 } };
 
 
-const QMetaObject *GLWidget::metaObject() const
+const QMetaObject *MyGLWidget::metaObject() const
 {
     return QObject::d_ptr->metaObject ? QObject::d_ptr->dynamicMetaObject() : &staticMetaObject;
 }
 
-void *GLWidget::qt_metacast(const char *_clname)
+void *MyGLWidget::qt_metacast(const char *_clname)
 {
     if (!_clname) return nullptr;
     if (!strcmp(_clname, qt_meta_stringdata_GLWidget.stringdata0))
@@ -102,7 +102,7 @@ void *GLWidget::qt_metacast(const char *_clname)
     return QGLWidget::qt_metacast(_clname);
 }
 
-int GLWidget::qt_metacall(QMetaObject::Call _c, int _id, void **_a)
+int MyGLWidget::qt_metacall(QMetaObject::Call _c, int _id, void **_a)
 {
     _id = QGLWidget::qt_metacall(_c, _id, _a);
     if (_id < 0)

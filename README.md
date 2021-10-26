@@ -2,6 +2,10 @@
 
 *Private* repository for our UTSxETHZ project. See [our google drive folder](https://drive.google.com/drive/folders/1YJcQI7zYRa3qaVeT9jVHU1yS_E3X_eKo?usp=sharing).
 
+## BUILD
+
+See `BUILD.md`.
+
 ## TODOES
 
 ### Must-do

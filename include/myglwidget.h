@@ -38,8 +38,8 @@
 **
 ****************************************************************************/
 
-#ifndef GLWIDGET_H
-#define GLWIDGET_H
+#ifndef MYGLWIDGET_H
+#define MYGLWIDGET_H
 
 
 #include <QGLWidget>
@@ -47,7 +47,7 @@
 #include <AntTweakBar.h>
 #include <QDir>
 
-class GLWidget : public QGLWidget
+class MyGLWidget : public QGLWidget
 {
     Q_OBJECT
 
@@ -56,9 +56,9 @@ public:
     int PickX;
     int PickY;
 
-    GLWidget(QWidget *parent = 0);
+    MyGLWidget(QWidget *parent = 0);
 
-    ~GLWidget(){};
+    ~MyGLWidget(){};
 
 
     QSize sizeHint() const {

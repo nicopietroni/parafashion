@@ -5,42 +5,55 @@ if(NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE Release)
 endif()
 
+SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread")
+
+option(IGL_STATIC_LIBRARY     "Use libIGL as static librarie" ON)
+
 find_package(OpenGL REQUIRED)
 find_package(GLUT REQUIRED)
-find_package(Qt5 COMPONENTS Widgets OpenGL REQUIRED) # redundant with libigl
+find_package(Qt5 COMPONENTS Widgets OpenGL Svg REQUIRED) # redundant with libigl ?
 
 # glew
-include_directories(lib/glew/include)
-# if this doesn't work try this https://github.com/ArthurSonzogni/OpenGL_CMake_Skeleton
-#add_definitions(-DGLEW_STATIC)
-#add_subdirectory(lib/glew EXCLUDE_FROM_ALL)
-#target_link_libraries(main PRIVATE libglew_static)
+# see https://github.com/ArthurSonzogni/OpenGL_CMake_Skeleton
+add_definitions(-DGLEW_STATIC)
+add_subdirectory(lib/glew-cmake EXCLUDE_FROM_ALL)
 
-#set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} 
-#    ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
-
-add_definitions(-DIGL_VIEWER_VIEWER_QUIET)
-
-add_subdirectory(lib/libigl)
+#add_subdirectory(lib/libigl) # TODO use this instead of hard copy in field_tracing
 add_subdirectory(lib/vcglib)
+include_directories(lib/field_tracing/lib/libigl/external/nanogui/ext/eigen) # TODO replace this with libigl's Eigen
+include_directories(lib/vcglib)
+include_directories(lib/field_tracing) # TODO update
+include_directories(lib/field_tracing/tracing)
+include_directories(lib/field_tracing/lib/libigl/include) # TODO REMOVE
+include_directories(lib/AntTweakBar/include)
+include_directories(lib/Clipper)
+
+link_directories(AntTweakBar lib/AntTweakBar/lib)
 
 include_directories(lib/Directional/include)
 
 # libraries which will be included in all apps:
 SET(COMMON_LIBRARIES 
-  igl::core
-  #igl::opengl_glfw 
-  #igl::png 
-  #igl::opengl_glfw_imgui 
   Qt5::Widgets 
   Qt5::OpenGL 
+  Qt5::Svg
   ${OPENGL_LIBRARIES} 
   ${GLUT_LIBRARY}
-  ${GLEW_LIBRARIES}
-  VGCLib
+  vcglib
+  AntTweakBar
+  libglew_static
 )
 
-file(GLOB SRCFILES src/*.cpp )
+file(GLOB SRCFILES src/*.cpp 
+    lib/vcglib/wrap/ply/plylib.cpp # TODO cleanup ?
+    lib/vcglib/wrap/gui/trackball.cpp 
+    lib/vcglib/wrap/gui/trackmode.cpp
+    lib/vcglib/wrap/qt/anttweakbarMapperNew.cpp
+    lib/vcglib/wrap/qt/Outline2ToQImage.cpp
+    lib/Clipper/clipper.cpp
+    lib/field_tracing/lib/libigl/include/igl/principal_curvature.h 
+    lib/field_tracing/lib/libigl/include/igl/copyleft/comiso/nrosy.h 
+)
 
 add_executable(parafashion ${SRCFILES} apps/parafashion.cpp)
 target_link_libraries(parafashion ${COMMON_LIBRARIES})

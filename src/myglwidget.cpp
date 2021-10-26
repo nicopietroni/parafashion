@@ -44,7 +44,7 @@
 #include <math.h>
 #include <mesh_drawing.h>
 #include <mesh_type.h>
-#include "glwidget.h"
+#include "myglwidget.h"
 #include <wrap/qt/trackball.h>
 #include <wrap/qt/anttweakbarMapper.h>
 #include <wrap/gl/gl_field.h>
@@ -199,7 +199,7 @@ void GLDrawPatchEdges(vcg::Color4b col=vcg::Color4b(0,0,255,255),
     glPopAttrib();
 }
 
-void GLWidget::GLDrawLegenda()
+void MyGLWidget::GLDrawLegenda()
 {
     ScalarType sizeX=0.5;
     ScalarType sizeY=0.05;
@@ -538,7 +538,7 @@ void InitBar(QWidget *w)
 ScalarType angleR=0;
 ScalarType alpha=0.4;
 
-void GLWidget::UpdateAnim()
+void MyGLWidget::UpdateAnim()
 {
     if (!hasFrames)return;
 
@@ -563,7 +563,7 @@ void GLWidget::UpdateAnim()
     update();
 }
 
-void GLWidget::UpdateRot()
+void MyGLWidget::UpdateRot()
 {
     angleR+=alpha;
     update();
@@ -574,7 +574,7 @@ QImage txt_image;
 
 //QOpenGLTexture * texture = nullptr;
 
-GLWidget::GLWidget(QWidget *parent)
+MyGLWidget::MyGLWidget(QWidget *parent)
     : QGLWidget(QGLFormat(QGL::SampleBuffers), parent)
 {
     timerRot= new QTimer(this);
@@ -650,11 +650,11 @@ GLWidget::GLWidget(QWidget *parent)
 
 GLuint texture_dress;
 
-void GLWidget::initializeGL ()
+void MyGLWidget::initializeGL ()
 {
     //initialize Glew
     glewInit();
-    //CaptInt.GLInit( GLWidget::width(),GLWidget::height());
+    //CaptInt.GLInit( MyGLWidget::width(),MyGLWidget::height());
     glClearColor(0, 0, 0, 0);
     glEnable(GL_LIGHTING);
     glEnable(GL_LIGHT0);
@@ -691,7 +691,7 @@ void GLWidget::initializeGL ()
 }
 
 
-void GLWidget::resizeGL (int w, int h)
+void MyGLWidget::resizeGL (int w, int h)
 {
     glViewport (0, 0, (GLsizei) w, (GLsizei) h);
     TwWindowSize(w, h);
@@ -700,7 +700,7 @@ void GLWidget::resizeGL (int w, int h)
 }
 
 
-void GLWidget::paintGL ()
+void MyGLWidget::paintGL ()
 {
     if (do_rotate)
         timerRot->start(0);
@@ -716,7 +716,7 @@ void GLWidget::paintGL ()
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
-    gluPerspective(40, GLWidget::width()/(float)GLWidget::height(), 0.1, 100);
+    gluPerspective(40, MyGLWidget::width()/(float)MyGLWidget::height(), 0.1, 100);
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
     gluLookAt(0,0,3.5f,   0,0,0,   0,1,0);
@@ -924,7 +924,7 @@ void GLWidget::paintGL ()
     //assert(glGetError()==GL_NO_ERROR);
 }
 
-void GLWidget::keyReleaseEvent (QKeyEvent * e)
+void MyGLWidget::keyReleaseEvent (QKeyEvent * e)
 {
     e->ignore ();
     if (e->key () == Qt::Key_Control)  track.ButtonUp (QT2VCG (Qt::NoButton, Qt::ControlModifier));
@@ -944,7 +944,7 @@ void GLWidget::keyReleaseEvent (QKeyEvent * e)
 }
 
 
-void GLWidget::keyPressEvent (QKeyEvent * e)
+void MyGLWidget::keyPressEvent (QKeyEvent * e)
 {
     e->ignore ();
     if (e->key () == Qt::Key_Control) track.ButtonDown (QT2VCG (Qt::NoButton, Qt::ControlModifier));
@@ -956,7 +956,7 @@ void GLWidget::keyPressEvent (QKeyEvent * e)
     updateGL ();
 }
 
-void GLWidget::mousePressEvent (QMouseEvent * e)
+void MyGLWidget::mousePressEvent (QMouseEvent * e)
 {
     if(!TwMousePressQt(this,e))
     {
@@ -983,7 +983,7 @@ void GLWidget::mousePressEvent (QMouseEvent * e)
     updateGL ();
 }
 
-void GLWidget::mouseMoveEvent (QMouseEvent * e)
+void MyGLWidget::mouseMoveEvent (QMouseEvent * e)
 {
     if (e->buttons ()) {
         if (hasToPick && Has_Shift)
@@ -1001,7 +1001,7 @@ void GLWidget::mouseMoveEvent (QMouseEvent * e)
     TwMouseMotion(QTLogicalToDevice(this, e->x()), QTLogicalToDevice(this, e->y()));
 }
 
-void GLWidget::mouseDoubleClickEvent (QMouseEvent * e)
+void MyGLWidget::mouseDoubleClickEvent (QMouseEvent * e)
 {
     if (e->buttons ())
     {
@@ -1019,7 +1019,7 @@ void GLWidget::mouseDoubleClickEvent (QMouseEvent * e)
 }
 
 
-void GLWidget::mouseReleaseEvent (QMouseEvent * e)
+void MyGLWidget::mouseReleaseEvent (QMouseEvent * e)
 {
     track.MouseUp(QT2VCG_X(this, e), QT2VCG_Y(this, e), QT2VCG(e->button (), e->modifiers ()));
     TwMouseReleaseQt(this,e);
@@ -1034,7 +1034,7 @@ void GLWidget::mouseReleaseEvent (QMouseEvent * e)
     updateGL ();
 }
 
-void GLWidget::wheelEvent (QWheelEvent * e)
+void MyGLWidget::wheelEvent (QWheelEvent * e)
 {
     const int WHEEL_STEP = 120;
     track.MouseWheel (e->delta () / float (WHEEL_STEP), QTWheel2VCG (e->modifiers ()));
