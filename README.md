@@ -10,15 +10,17 @@ See `BUILD.md`.
 
 ### Must-do
 
-* vcg submodule
-* Get it to run on our machines
-* Use external tracing library, which Nico will upgrade later
+* repair double click path removal 
+* split window between 3D and 2D
+* Submodule field_tracing, which Nico will upgrade later
 * Link to Directional (+ recent libigl) instead of old libigl
+* Submodules for AntTweakBar
+* investigate error in console: "ERROR(AntTweakBar) >> Invalid parameter"
+* reduce compiling time (reorder functions, smaller myglwidget)
 
 ### Might-do
 
 * Add I/O to AntTweakBar menu ?
-* Replace AntTweakBar with Dear ImGui (which is already bundled with libigl) ?
 * replace glut with glfw ?
 
 ## Contributing

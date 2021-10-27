@@ -230,16 +230,12 @@ public:
     void AddSharpConstraints(const std::vector<std::vector<CoordType> > &PickedPoints)
     {
         //get the half mesh
-        //std::cout<<"1"<<std::endl;
         Symmetrizer<TriMeshType> Symm(deformed_mesh,reference_mesh);
         Symm.GetHalfDefMesh(half_def_mesh);
-        //std::cout<<"2"<<std::endl;
         PathUI<TriMeshType> TPath(half_def_mesh);
         //std::cout<<"Size V:"<<PickedPoints.size()<<std::endl;
         TPath.AddSharpConstraints(PickedPoints);
-        //        //std::cout<<"3"<<std::endl;
         //        PreProcessMesh(half_def_mesh,true);
-        //std::cout<<"4"<<std::endl;
         //        Symm.CopyFromHalfDefMesh(half_def_mesh);
 
         //        //CHECK

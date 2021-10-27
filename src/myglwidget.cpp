@@ -736,10 +736,10 @@ void MyGLWidget::paintGL ()
         if (draw_uv_and_3D)
         {
             glPushMatrix();
-            glTranslate(CoordType(0.5,0.2,0));
+            glTranslate(CoordType(1.4, 0.6,0)); // TODO find formula to fit exactly in corner
             //vcg::Box2<ScalarType> uv_box=vcg::tri::UV_Utils<CMesh>::PerWedgeUVBox(deformed_mesh);
             //glTranslate(CoordType(uv_box.DimX()/3,0,0));
-            vcg::glScale(0.75);
+            vcg::glScale(0.5);
         }
         MeshDrawing<CMesh>::GLDrawUV(deformed_mesh,textured,colored_distortion);
         //deformed_mesh.GLDrawUV(textured,colored_distortion);
@@ -757,7 +757,7 @@ void MyGLWidget::paintGL ()
     if (draw_uv_and_3D)
     {
         glPushMatrix();
-        glTranslate(CoordType(-0.8,0,0));
+        glTranslate(CoordType(0,0,0)); // Offset for main 3D mesh when UV is also displayed here
         //vcg::glScale(2.0);
     }
 
