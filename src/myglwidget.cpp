@@ -842,7 +842,6 @@ void MyGLWidget::paintGL ()
         GlDrawPlane(Symmetrizer<CMesh>::SymmPlane(),deformed_mesh.bbox.Diag()/2);//,deformed_mesh.bbox.Center());
     }
 
-
     if  (user_is_picking)
     {
         GPath.GLAddPoint(vcg::Point2i(PickX,PickY));
@@ -1021,6 +1020,10 @@ void MyGLWidget::mouseReleaseEvent (QMouseEvent * e)
         user_is_picking = false;
         //TPath.AddSharpConstraints(GPath.PickedPoints);
         //TPath.AddSharpConstraints();
+        if (GPath.PickedPoints.back().size() < 1){
+            GPath.PickedPoints.pop_back();
+            return;
+        }
         DoBatchProcess();
     }
     updateGL ();
