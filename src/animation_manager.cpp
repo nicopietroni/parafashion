@@ -1,6 +1,9 @@
 
 #include "animation_manager.h"
 
+#include <mesh_type.h>
+#include <wrap/igl/smooth_field.h>
+
 template <class FaceType>
 void Jacobian<FaceType>::FromUV( CoordType p0,CoordType p1,CoordType p2,
                     Point2X u0,Point2X u1,Point2X u2,

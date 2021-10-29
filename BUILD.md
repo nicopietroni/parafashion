@@ -21,6 +21,13 @@ make -j parafashion
 
 Then run with e.g. `./parafashion ../data/leggins/leggins.ply ../data/leggins/leggins.ply ../data/leggins/running_leggins_frames.txt`
 
+Some other copy-pastable inputs: 
+```
+./parafashion ../data/gargo/gargoyle_rem.ply ../data/gargo/gargoyle_rem.ply
+./parafashion ../data/wet/wet.obj ../data/wet/wet.obj
+
+```
+
 ## From Nico's Parafashion
 
 First, uncomment `LIBS += -lGLULIBS += -lGLU` in `Parafashion.pro`.

@@ -4,8 +4,6 @@
 #include <vector>
 #include <vcg/space/index/grid_static_ptr.h>
 #include <vcg/complex/algorithms/closest.h>
-#include <mesh_type.h>
-#include <wrap/igl/smooth_field.h>
 
 #define ANISOTR_PERCENTILE 0.1
 

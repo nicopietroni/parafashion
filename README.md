@@ -10,6 +10,7 @@ See `BUILD.md`.
 
 ### Must-do
 
+* myglwidget: split, put key/mouse bindings in another file
 * repair double click path removal 
 * split window between 3D and 2D
 * Submodule field_tracing, which Nico will upgrade later
@@ -17,9 +18,11 @@ See `BUILD.md`.
 * Submodules for AntTweakBar
 * investigate error in console: "ERROR(AntTweakBar) >> Invalid parameter"
 * reduce compiling time (reorder functions, smaller myglwidget)
+* viz: 3-singularities and selected paths are both red, change that
 
 ### Might-do
 
+* also allow qmake ?
 * Add I/O to AntTweakBar menu ?
 * replace glut with glfw ?
 
