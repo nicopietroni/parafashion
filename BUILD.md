@@ -17,7 +17,6 @@ mkdir build
 cd build
 cmake ..
 make -j parafashion
-./parafashion
 ```
 
 Then run with e.g. `./parafashion ../data/leggins/leggins.ply ../data/leggins/leggins.ply`
