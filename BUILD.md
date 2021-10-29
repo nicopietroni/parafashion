@@ -19,7 +19,7 @@ cmake ..
 make -j parafashion
 ```
 
-Then run with e.g. `./parafashion ../data/leggins/leggins.ply ../data/leggins/leggins.ply`
+Then run with e.g. `./parafashion ../data/leggins/leggins.ply ../data/leggins/leggins.ply ../data/leggins/running_leggins_frames.txt`
 
 ## From Nico's Parafashion
 
