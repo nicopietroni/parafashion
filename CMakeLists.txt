@@ -59,4 +59,27 @@ add_executable(parafashion ${SRCFILES} apps/parafashion.cpp)
 target_link_libraries(parafashion ${COMMON_LIBRARIES})
 include_directories(include)
 
+file(GLOB TEXTILESRC # TODO REMOVE...
+  src/textile_param/ourglwidget.cpp 
+  src/textile_param/*.cpp 
+  lib/vcglib/wrap/ply/plylib.cpp
+  lib/vcglib/wrap/gui/trackball.cpp
+  lib/vcglib/wrap/gui/trackmode.cpp
+  lib/vcglib/wrap/qt/anttweakbarMapperNew.cpp
+  #lib/libigl/principal_curvature.cpp
+)
+
+add_executable(textile_param apps/textile_param.cpp ${TEXTILESRC})
+target_link_libraries(textile_param 
+  Qt5::Widgets 
+  Qt5::OpenGL 
+  Qt5::Svg
+  ${OPENGL_LIBRARIES} 
+  ${GLUT_LIBRARY}
+  AntTweakBar
+  libglew_static
+  ${COMMON_LIBRARIES}
+)
+target_include_directories(textile_param PUBLIC include/textile_param)
+
 # TODO: other app(s), parafashion_commandline
