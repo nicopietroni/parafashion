@@ -25,6 +25,7 @@ See `BUILD.md`.
 * also allow qmake ?
 * Add I/O to AntTweakBar menu ?
 * replace glut with glfw ?
+* `include` folder for `field_tracing`
 
 ## Contributing
 

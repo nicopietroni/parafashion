@@ -108,6 +108,7 @@ void TW_CALL InitialParametrize(void *)
     tri_mesh.RestoreRestPos();
     vcg::tri::InitializeArapWithLSCM<MyTriMesh>(tri_mesh);
     vcg::tri::OptimizeUV_ARAP(tri_mesh);
+    //bool Loaded=tri_mesh.LoadTriMesh("../../quad_dist.obj");
 //    vcg::tri::OptimizeUV_LSCM(tri_mesh);
     //vcg::tri::OptimizeUV_ARAP(tri_mesh);
     UpdateCoords();

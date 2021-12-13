@@ -38,7 +38,7 @@
 **
 ****************************************************************************/
 
-#include <GL/glew.h>
+#include <GL/glew.h> // WARNING GLEW MUST BE INCLUDED FIRST
 #include <QMouseEvent>
 
 #include <math.h>
@@ -47,6 +47,7 @@
 #include "myglwidget.h"
 #include <wrap/qt/trackball.h>
 #include <wrap/qt/anttweakbarMapper.h>
+#include <wrap/qt/Outline2ToQImage.h>
 #include <wrap/gl/gl_field.h>
 #include <qtimer.h>
 #include <qfont.h>
@@ -55,8 +56,7 @@
 #include <QOpenGLTexture>
 
 #include "trace_path_GL.h"
-#include "wrap/qt/Outline2ToQImage.h"
-#include <svg_exporter.h>
+#include "svg_exporter.h"
 #include "parafashion.h"
 #include "parafashion_interface.h"
 

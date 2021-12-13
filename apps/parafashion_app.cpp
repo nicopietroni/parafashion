@@ -1,12 +1,12 @@
 #include <QApplication>
 #include <QDesktopWidget>
 #include <GL/glew.h>
-#include "myglwidget.h"
 #include <wrap/qt/anttweakbarMapper.h>
 #include <QWindow>
 #include <QTextStream>
 #include<vcg/complex/algorithms/hole.h>
 
+#include "myglwidget.h"
 
 extern std::string pathDef,pathRef,pathFrames;
 

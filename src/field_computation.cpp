@@ -1,5 +1,16 @@
 #include "field_computation.h"
 
+#include <vcg/complex/algorithms/update/topology.h>
+#include <vcg/complex/algorithms/update/bounding.h>
+#include <vcg/simplex/face/topology.h>
+#include <wrap/io_trimesh/import.h>
+#include <wrap/io_trimesh/export.h>
+//#include <wrap/gl/trimesh.h>
+#include <iostream>
+#include <fstream>
+#include <vcg/complex/algorithms/attribute_seam.h>
+#include <vcg/complex/algorithms/crease_cut.h>
+#include <vcg/complex/algorithms/parametrization/tangent_field_operators.h>
 #include <wrap/io_trimesh/export_field.h>
 #include <wrap/igl/smooth_field.h>
 #include <mesh_type.h>

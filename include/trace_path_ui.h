@@ -75,7 +75,7 @@ class PathUI
         //VertexPath.resize(VertexPath.size()+1);
         VertexPath.clear();
         VertexPath.resize(PickedPoints.size());
-        ScalarType maxD=mesh.bbox.Diag();
+        ScalarType maxD=mesh.bbox.Diag()/20.0;
         for (size_t i=0;i<PickedPoints.size();i++)
         {
             for (size_t j=0;j<PickedPoints[i].size();j++)

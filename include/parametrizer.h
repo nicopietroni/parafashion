@@ -1,8 +1,8 @@
 #ifndef PARAMETRIZER
 #define PARAMETRIZER
 
-#include <wrap/igl/arap_parametrization.h>
-#include <wrap/igl/lscm_parametrization.h>
+//#include <wrap/igl/arap_parametrization.h>
+//#include <wrap/igl/lscm_parametrization.h>
 #include <vcg/complex/algorithms/parametrization/distortion.h>
 #include <vcg/space/outline2_packer.h>
 #include <vcg/complex/algorithms/parametrization/uv_utils.h>
