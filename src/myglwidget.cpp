@@ -42,7 +42,7 @@
 #include <QMouseEvent>
 
 #include <math.h>
-#include <mesh_drawing.h>
+#include <GL_mesh_drawing.h>
 #include <mesh_type.h>
 #include "myglwidget.h"
 #include <wrap/qt/trackball.h>
@@ -69,19 +69,19 @@ vcg::Trackball track;//the active manipulator
 bool drawfield=false;
 
 
-typename CMesh::CoordType CenterDef,CenterRef;
-CMesh deformed_mesh;
-CMesh reference_mesh;
-CMesh half_def_mesh;
+typename TraceMesh::CoordType CenterDef,CenterRef;
+TraceMesh deformed_mesh;
+TraceMesh reference_mesh;
+TraceMesh half_def_mesh;
 
 TwBar *barFashion;
 
-vcg::GlTrimesh<CMesh> glWrap;
+vcg::GlTrimesh<TraceMesh> glWrap;
 
-vcg::GLField<CMesh> glField;
+vcg::GLField<TraceMesh> glField;
 
-typedef typename CMesh::ScalarType ScalarType;
-typedef typename CMesh::CoordType CoordType;
+typedef typename TraceMesh::ScalarType ScalarType;
+typedef typename TraceMesh::CoordType CoordType;
 
 int Iterations;
 ScalarType EdgeStep;
@@ -99,7 +99,7 @@ bool hasFrames=false;
 int xMouse,yMouse;
 
 
-//typedef FieldSmoother<CMesh> FieldSmootherType;
+//typedef FieldSmoother<TraceMesh> FieldSmootherType;
 //FieldSmootherType::SmoothParam FieldParam;
 
 vcg::GLW::DrawMode drawmode=vcg::GLW::DMSmooth;     /// the current drawmode
@@ -113,12 +113,12 @@ QTimer *timerAnim;
 
 bool HasTxt=false;
 
-PathGL<CMesh> GPath;
+PathGL<TraceMesh> GPath;
 
 #define MAX_DIST 0.05
 
-Parafashion<CMesh> PFashion(deformed_mesh,reference_mesh);
-AnimationManager<CMesh> AManager(deformed_mesh);
+Parafashion<TraceMesh> PFashion(deformed_mesh,reference_mesh);
+AnimationManager<TraceMesh> AManager(deformed_mesh);
 
 template <class ScalarType>
 void GlDrawPlane(const vcg::Plane3<ScalarType> &Pl,
@@ -252,10 +252,10 @@ void DoColorByDistortion()
     for (size_t i=0;i<deformed_mesh.face.size();i++)
         FaceQ.push_back(deformed_mesh.face[i].Q());
 
-    vcg::tri::Distortion<CMesh,true>::SetQasDistorsion(deformed_mesh,vcg::tri::Distortion<CMesh,true>::EdgeComprStretch);
+    vcg::tri::Distortion<TraceMesh,true>::SetQasDistorsion(deformed_mesh,vcg::tri::Distortion<TraceMesh,true>::EdgeComprStretch);
 
     //copy per vertex
-    vcg::tri::UpdateQuality<CMesh>::VertexFromFace(deformed_mesh);
+    vcg::tri::UpdateQuality<TraceMesh>::VertexFromFace(deformed_mesh);
 
     //clamp
     for (size_t i=0;i<deformed_mesh.vert.size();i++)
@@ -266,7 +266,7 @@ void DoColorByDistortion()
 
     colored_distortion=true;
 
-    vcg::tri::UpdateColor<CMesh>::PerVertexQualityRamp(deformed_mesh,MAX_DIST,-MAX_DIST);
+    vcg::tri::UpdateColor<TraceMesh>::PerVertexQualityRamp(deformed_mesh,MAX_DIST,-MAX_DIST);
 
     //cut everything bigger than a threshold
 
@@ -285,7 +285,7 @@ void DoColorByPatch()
 
 void TW_CALL ColorByNone(void *)
 {
-    vcg::tri::UpdateColor<CMesh>::PerFaceConstant(deformed_mesh,vcg::Color4b(255,255,255,255));
+    vcg::tri::UpdateColor<TraceMesh>::PerFaceConstant(deformed_mesh,vcg::Color4b(255,255,255,255));
 }
 
 void TW_CALL ColorByArapDist(void *)
@@ -342,17 +342,17 @@ void TW_CALL SaveData(void *)
     std::string saveMeshName=ProjM+std::string("_patch.obj");
 
     //SAVE THE MESH
-    CMesh saveM;
-    vcg::tri::Append<CMesh,CMesh>::Mesh(saveM,deformed_mesh);
+    TraceMesh saveM;
+    vcg::tri::Append<TraceMesh,TraceMesh>::Mesh(saveM,deformed_mesh);
 
 
-    vcg::tri::Clean<CMesh>::RemoveDuplicateVertex(saveM);
+    vcg::tri::Clean<TraceMesh>::RemoveDuplicateVertex(saveM);
 
     for (size_t i=0;i<saveM.vert.size();i++)
         saveM.vert[i].P()+=CenterDef;
 
     saveM.UpdateAttributes();
-    vcg::tri::io::ExporterOBJ<CMesh>::Save(saveM,saveMeshName.c_str(),
+    vcg::tri::io::ExporterOBJ<TraceMesh>::Save(saveM,saveMeshName.c_str(),
                                            vcg::tri::io::Mask::IOM_WEDGTEXCOORD|
                                            vcg::tri::io::Mask::IOM_FACECOLOR);
 
@@ -370,7 +370,7 @@ void TW_CALL SaveData(void *)
     std::string pathPatch=ProjM;
     pathPatch=ProjM+"_patch.svg";
     float scale=1000;
-    SvgExporter<CMesh>::ExportUVPolyline(deformed_mesh,pathPatch.c_str(),scale,4,
+    SvgExporter<TraceMesh>::ExportUVPolyline(deformed_mesh,pathPatch.c_str(),scale,4,
                                          PFashion.param_boundary*scale,
                                          PFashion.param_boundary*scale*0.75);
 
@@ -609,8 +609,8 @@ MyGLWidget::MyGLWidget(QWidget *parent)
     CenterRef=reference_mesh.MoveCenterOnZero();
     CenterDef=deformed_mesh.MoveCenterOnZero();
 
-    vcg::tri::UpdateColor<CMesh>::PerFaceConstant(deformed_mesh,vcg::Color4b(220,220,220,255));
-    vcg::tri::UpdateColor<CMesh>::PerFaceConstant(reference_mesh,vcg::Color4b(255,185,15,255));
+    vcg::tri::UpdateColor<TraceMesh>::PerFaceConstant(deformed_mesh,vcg::Color4b(220,220,220,255));
+    vcg::tri::UpdateColor<TraceMesh>::PerFaceConstant(reference_mesh,vcg::Color4b(255,185,15,255));
 
     //see if there is the texture
     std::string pathTxt=pathDef;
@@ -737,15 +737,15 @@ void MyGLWidget::paintGL ()
         {
             glPushMatrix();
             glTranslate(CoordType(1.4, 0.6,0)); // TODO find formula to fit exactly in corner
-            //vcg::Box2<ScalarType> uv_box=vcg::tri::UV_Utils<CMesh>::PerWedgeUVBox(deformed_mesh);
+            //vcg::Box2<ScalarType> uv_box=vcg::tri::UV_Utils<TraceMesh>::PerWedgeUVBox(deformed_mesh);
             //glTranslate(CoordType(uv_box.DimX()/3,0,0));
             vcg::glScale(0.5);
         }
-        MeshDrawing<CMesh>::GLDrawUV(deformed_mesh,textured,colored_distortion);
+        MeshDrawing<TraceMesh>::GLDrawUV(deformed_mesh,textured,colored_distortion);
         //deformed_mesh.GLDrawUV(textured,colored_distortion);
         glEnable( GL_LINE_SMOOTH );
         glHint( GL_LINE_SMOOTH_HINT, GL_NICEST );
-        MeshDrawing<CMesh>::GLDrawEdgeUV(deformed_mesh);
+        MeshDrawing<TraceMesh>::GLDrawEdgeUV(deformed_mesh);
         //deformed_mesh.GLDrawEdgeUV();
         if (draw_uv_and_3D)
         {
@@ -780,11 +780,11 @@ void MyGLWidget::paintGL ()
     if (do_anim && hasFrames)
     {
         if (FAnimMode==FACurvature)
-            vcg::GLField<CMesh>::GLDrawFaceField(deformed_mesh,false,false,0.007,
+            vcg::GLField<TraceMesh>::GLDrawFaceField(deformed_mesh,false,false,0.007,
                                                  AManager.MaxAnisotropy(),0,false);
 
         if (FAnimMode==FAStretchCompress)
-            vcg::GLField<CMesh>::GLDrawFaceField(deformed_mesh,false,false,0.007,
+            vcg::GLField<TraceMesh>::GLDrawFaceField(deformed_mesh,false,false,0.007,
                                                 AManager.MaxStretchCompress(),
                                                 -AManager.MaxStretchCompress(),true);
     }
@@ -817,7 +817,7 @@ void MyGLWidget::paintGL ()
         glDisable(GL_TEXTURE_2D);
 
         //half_def_mesh.GLDrawSharpEdges(vcg::Color4b(255,0,0,255),10);
-        MeshDrawing<CMesh>::GLDrawSharpEdges(deformed_mesh,vcg::Color4b(255,0,0,255),10);
+        MeshDrawing<TraceMesh>::GLDrawSharpEdges(deformed_mesh,vcg::Color4b(255,0,0,255),10);
         //deformed_mesh.GLDrawSharpEdges(vcg::Color4b(255,0,0,255),10);
 
         GLDrawPatchEdges();
@@ -833,13 +833,13 @@ void MyGLWidget::paintGL ()
 
     if ((drawfield)&&(draw3D))
     {
-        vcg::GLField<CMesh>::GLDrawFaceField(deformed_mesh,false,false,0.007);
-        vcg::GLField<CMesh>::GLDrawSingularity(deformed_mesh);
+        vcg::GLField<TraceMesh>::GLDrawFaceField(deformed_mesh,false,false,0.007);
+        vcg::GLField<TraceMesh>::GLDrawSingularity(deformed_mesh);
     }
 
     if ((drawSymmetryPlane)&&(draw3D))
     {
-        GlDrawPlane(Symmetrizer<CMesh>::SymmPlane(),deformed_mesh.bbox.Diag()/2);//,deformed_mesh.bbox.Center());
+        GlDrawPlane(Symmetrizer<TraceMesh>::SymmPlane(),deformed_mesh.bbox.Diag()/2);//,deformed_mesh.bbox.Center());
     }
 
     if  (user_is_picking)

@@ -8,11 +8,6 @@
 ```
 git submodule update --init --recursive
 
-# Compile AntTweakBar
-cd lib/AntTweakBar/src
-make -j
-cd ../../..
-
 mkdir build
 cd build
 cmake ..

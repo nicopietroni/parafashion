@@ -9,7 +9,7 @@ int main(int argc, char *argv[])
         std::cout<<"Pass a Mesh (OBJ or PLY) as an argument"<<std::endl;
         exit(0);
     }
-    CMesh mesh;
+    TraceMesh mesh;
     std::cout<<"Loading:"<<argv[1]<<std::endl;
     bool loaded=mesh.LoadMesh(std::string(argv[1]));
     assert(loaded);
@@ -18,7 +18,7 @@ int main(int argc, char *argv[])
     std::vector<std::vector<double> > CoordReference;
     std::vector<int> Partition;
     std::vector<std::vector<std::vector<double> > > VertUV;
-    MeshToVectors<CMesh>(mesh,FacesReference,CoordReference,Partition,VertUV);
+    MeshToVectors<TraceMesh>(mesh,FacesReference,CoordReference,Partition,VertUV);
 
     //FOR NOW THE DEFORMED AND THE REFERENCE ARE THE SAME
     std::vector<std::vector<size_t> > FacesDeformed=FacesReference;
@@ -41,7 +41,7 @@ int main(int argc, char *argv[])
     std::cout<<"Done"<<std::endl;
 
     //EXPORTING THE RESULT TO A MESH
-    CMesh SaveM;
+    TraceMesh SaveM;
     VectorsToTriMesh(FacesOutput,CoordOutput,PartitionOutput,VertUVOutput,SaveM);
     SaveM.SaveTriMesh("./test_out.ply");
     return 0;

@@ -97,7 +97,7 @@ public:
         {
             vcg::tri::OptimizeUV_ARAP(m,5,0,true);
             //evaluate the distortion
-            vcg::tri::Distortion<MeshType,false>::SetQasDistorsion(m,vcg::tri::Distortion<CMesh,false>::EdgeComprStretch);
+            vcg::tri::Distortion<MeshType,false>::SetQasDistorsion(m,vcg::tri::Distortion<TraceMesh,false>::EdgeComprStretch);
             ScalarType A=0;
             for (size_t i=0;i<m.face.size();i++)
             {
@@ -115,8 +115,8 @@ public:
         {
             deformed_mesh.Clear();
             half_def_mesh.Clear();
-            vcg::tri::Append<CMesh,CMesh>::Mesh(deformed_mesh,deformed_mesh_step2);
-            vcg::tri::Append<CMesh,CMesh>::Mesh(half_def_mesh,half_def_mesh_step2);
+            vcg::tri::Append<TraceMesh,TraceMesh>::Mesh(deformed_mesh,deformed_mesh_step2);
+            vcg::tri::Append<TraceMesh,TraceMesh>::Mesh(half_def_mesh,half_def_mesh_step2);
             deformed_mesh.UpdateAttributes();
             half_def_mesh.UpdateAttributes();
             half_def_mesh.InitRPos();
@@ -258,8 +258,8 @@ public:
         {
             half_def_mesh_step1.Clear();
             deformed_mesh_step1.Clear();
-            vcg::tri::Append<CMesh,CMesh>::Mesh(half_def_mesh_step1,half_def_mesh);
-            vcg::tri::Append<CMesh,CMesh>::Mesh(deformed_mesh_step1,deformed_mesh);
+            vcg::tri::Append<TraceMesh,TraceMesh>::Mesh(half_def_mesh_step1,half_def_mesh);
+            vcg::tri::Append<TraceMesh,TraceMesh>::Mesh(deformed_mesh_step1,deformed_mesh);
         }
     }
 

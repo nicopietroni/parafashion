@@ -18,15 +18,16 @@ find_package(Qt5 COMPONENTS Widgets OpenGL Svg REQUIRED) # redundant with libigl
 add_definitions(-DGLEW_STATIC)
 add_subdirectory(lib/glew-cmake EXCLUDE_FROM_ALL)
 
-#add_subdirectory(lib/libigl) # TODO use this instead of hard copy in field_tracing
+#add_subdirectory(lib/libigl) # TODO use this instead of oldigl
 add_subdirectory(lib/vcglib)
-include_directories(lib/field_tracing/lib/libigl/external/nanogui/ext/eigen) # TODO replace this with libigl's Eigen
 include_directories(lib/vcglib)
-include_directories(lib/field_tracing) # TODO update
+include_directories(lib/field_tracing)
 include_directories(lib/field_tracing/tracing)
-include_directories(lib/field_tracing/lib/libigl/include) # TODO REMOVE
 include_directories(lib/AntTweakBar/include)
 include_directories(lib/Clipper)
+
+include_directories(lib/oldlibigl/include) # TODO REMOVE
+include_directories(lib/oldlibigl/external/nanogui/ext/eigen) # TODO REMOVE
 
 link_directories(AntTweakBar lib/AntTweakBar/lib)
 

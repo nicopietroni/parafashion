@@ -478,5 +478,5 @@ AnimationManager<TriMeshType>::AnimationManager(TriMeshType &_target_shape):targ
 {}
 
 //Manual instantiation:
-template class Jacobian<CFace>;
-template class AnimationManager<CMesh>;
+template class Jacobian<TraceFace>;
+template class AnimationManager<TraceMesh>;

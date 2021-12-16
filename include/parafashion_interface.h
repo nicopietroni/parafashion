@@ -119,7 +119,7 @@ void DerivePatchLayout(const std::vector<std::vector<size_t> > &FacesReference,
                        std::vector<int> &Partition,
                        std::vector<std::vector<std::vector<double> > > &FaceVertUV)
 {
-    typedef typename CMesh::CoordType CoordType;
+    typedef typename TraceMesh::CoordType CoordType;
 
     //TRANSFORM THE CONSTRAINTS
     std::vector<std::vector<CoordType> > ConstrPoints;
@@ -140,12 +140,12 @@ void DerivePatchLayout(const std::vector<std::vector<size_t> > &FacesReference,
     assert(FacesReference.size()==FacesDeformed.size());
     assert(CoordReference.size()==CoordDeformed.size());
 
-    CMesh deformed_mesh,reference_mesh;
+    TraceMesh deformed_mesh,reference_mesh;
     VectorsToTriMesh(FacesReference,CoordReference,reference_mesh);
     VectorsToTriMesh(FacesDeformed,CoordDeformed,deformed_mesh);
 
     //PROCESS THE DECOMPOSITION
-    Parafashion<CMesh> PFashion(deformed_mesh,reference_mesh);
+    Parafashion<TraceMesh> PFashion(deformed_mesh,reference_mesh);
     PFashion.Init();
     PFashion.BatchProcess(ConstrPoints,false,false);
 

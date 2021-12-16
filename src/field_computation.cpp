@@ -48,4 +48,4 @@ void FieldComputation<TriMeshType>::ComputeField(TriMeshType &mesh,
 }
 
 //Manual instantiation:
-template class FieldComputation<CMesh>;
+template class FieldComputation<TraceMesh>;
