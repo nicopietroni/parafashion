@@ -1,0 +1,11 @@
+Drift 100
+Srate 0.01
+SplitOnRem 1
+MaxVal 5
+CCability 1
+MatchVal 1
+AddNeed 1
+FinalRem 1
+ForceSplit 0
+Subd 0
+MetaCollapse 1
