@@ -8,7 +8,7 @@
 #include <vcg/space/index/grid_static_ptr.h>
 #include <vcg/complex/algorithms/closest.h>
 #include <vcg/complex/algorithms/clean.h>
-#include <patch_tracer.h>
+#include <tracing/patch_tracer.h>
 #include <vcg/complex/algorithms/clean.h>
 
 template <class TriMeshType>

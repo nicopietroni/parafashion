@@ -7,7 +7,7 @@
 #include <set>
 #include <vcg/complex/algorithms/parametrization/uv_utils.h>
 //#include "marching_squares.h"
-#include "lib/Clipper/clipper.hpp"
+#include <clipper.hpp>
 #include <vcg/complex/algorithms/point_sampling.h>
 #include <wrap/io_trimesh/export.h>
 //#include "./lib/CavalierContours/include/cavc/polylineoffset.hpp"

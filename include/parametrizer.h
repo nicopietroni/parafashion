@@ -6,7 +6,7 @@
 #include <vcg/complex/algorithms/parametrization/distortion.h>
 #include <vcg/space/outline2_packer.h>
 #include <vcg/complex/algorithms/parametrization/uv_utils.h>
-#include <patch_manager.h>
+#include <tracing/patch_manager.h>
 //enum ParamType{Arap,LSQMap};
 
 //template <class TriMeshType>

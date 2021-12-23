@@ -1,13 +1,13 @@
-#ifndef PARAFASHION
-#define PARAFASHION
+#pragma once
 
 #include "symmetrizer.h"
 #include "parametrizer.h"
 #include "field_computation.h"
 #include "trace_path_ui.h"
-#include <tracer_interface.h>
-#include <mesh_type.h>
-#include  "animation_manager.h"
+#include <tracing/tracer_interface.h>
+#include <tracing/mesh_type.h>
+#include "animation_manager.h"
+ 
 
 enum PatchMode{PMMinTJuncions,PMAvgTJuncions,PMAllTJuncions};
 
@@ -433,4 +433,3 @@ public:
     }
 };
 
-#endif

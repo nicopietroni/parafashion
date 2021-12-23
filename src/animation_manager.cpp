@@ -1,7 +1,7 @@
 
 #include "animation_manager.h"
 
-#include <mesh_type.h>
+#include <tracing/mesh_type.h>
 #include <wrap/igl/smooth_field.h>
 
 template <class FaceType>

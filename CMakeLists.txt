@@ -21,8 +21,7 @@ add_subdirectory(lib/glew-cmake EXCLUDE_FROM_ALL)
 #add_subdirectory(lib/libigl) # TODO use this instead of oldigl
 add_subdirectory(lib/vcglib)
 include_directories(lib/vcglib)
-include_directories(lib/field_tracing)
-include_directories(lib/field_tracing/tracing)
+include_directories(lib/tracing/include)
 include_directories(lib/AntTweakBar/include)
 include_directories(lib/Clipper)
 
@@ -52,8 +51,6 @@ file(GLOB SRCFILES src/*.cpp
     lib/vcglib/wrap/qt/anttweakbarMapperNew.cpp
     lib/vcglib/wrap/qt/Outline2ToQImage.cpp
     lib/Clipper/clipper.cpp
-    lib/field_tracing/lib/libigl/include/igl/principal_curvature.h 
-    lib/field_tracing/lib/libigl/include/igl/copyleft/comiso/nrosy.h 
 )
 
 add_executable(parafashion ${SRCFILES} apps/parafashion.cpp)

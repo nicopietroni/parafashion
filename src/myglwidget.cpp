@@ -42,8 +42,8 @@
 #include <QMouseEvent>
 
 #include <math.h>
-#include <GL_mesh_drawing.h>
-#include <mesh_type.h>
+#include <tracing/GL_mesh_drawing.h>
+#include <tracing/mesh_type.h>
 #include "myglwidget.h"
 #include <wrap/qt/trackball.h>
 #include <wrap/qt/anttweakbarMapper.h>

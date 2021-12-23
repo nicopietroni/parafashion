@@ -2,7 +2,7 @@
 
 #include <wrap/io_trimesh/export_field.h>
 #include <wrap/igl/smooth_field.h>
-#include <mesh_type.h>
+#include <tracing/mesh_type.h>
 
 template <class TriMeshType>
 void FieldComputation<TriMeshType>::ComputeField(TriMeshType &mesh,
