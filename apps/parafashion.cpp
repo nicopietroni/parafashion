@@ -5,13 +5,16 @@
 #include <wrap/qt/anttweakbarMapper.h>
 #include <QWindow>
 #include <QTextStream>
-#include<vcg/complex/algorithms/hole.h>
-
+#include <vcg/complex/algorithms/hole.h>
+#include <clocale>
 
 extern std::string pathDef,pathRef,pathFrames;
 
 int main(int argc, char *argv[])
 {
+    //Use "." as decimal separator
+    std::setlocale(LC_NUMERIC, "en_US.UTF-8");
+
     QApplication app(argc, argv);
 
     QWindow dummy;
