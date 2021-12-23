@@ -10,18 +10,18 @@ void FieldComputation<TriMeshType>::ComputeField(TriMeshType &mesh,
                              ScalarType CurvatureFidelity,
                              bool DebugMsg)
 {
-    typedef FieldSmoother<TriMeshType> FieldSmootherType;
+    typedef vcg::tri::FieldSmoother<TriMeshType> FieldSmootherType;
     typename FieldSmootherType::SmoothParam Param;
     Param.align_borders=true;
     if (FMode==FMBoundary)
     {
         //Param.alpha_curv=CurvatureFidelity;
-        Param.SmoothM=SMNPoly;
+        Param.SmoothM=vcg::tri::SMNPoly;
     }
     else
     {
         Param.alpha_curv=CurvatureFidelity;
-        Param.SmoothM=SMMiq;
+        Param.SmoothM=vcg::tri::SMMiq;
     }
 
     //add features

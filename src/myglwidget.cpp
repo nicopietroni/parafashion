@@ -120,6 +120,25 @@ PathGL<TraceMesh> GPath;
 Parafashion<TraceMesh> PFashion(deformed_mesh,reference_mesh);
 AnimationManager<TraceMesh> AManager(deformed_mesh);
 
+void GLDrawPoints(const std::vector<CoordType> &DrawPos,
+                  const ScalarType &GLSize,const vcg::Color4b &Col)
+{
+    glPushAttrib(GL_ALL_ATTRIB_BITS);
+    glDisable(GL_LIGHTING);
+    glDepthRange(0,0.9995);
+    glPointSize(GLSize);
+
+    for (size_t i=0;i<DrawPos.size();i++)
+    {
+
+        vcg::glColor(Col);
+        glBegin(GL_POINTS);
+        vcg::glVertex(DrawPos[i]);
+        glEnd();
+    }
+    glPopAttrib();
+}
+
 template <class ScalarType>
 void GlDrawPlane(const vcg::Plane3<ScalarType> &Pl,
                  const ScalarType &size)
@@ -181,13 +200,14 @@ void GLDrawPatchEdges(vcg::Color4b col=vcg::Color4b(0,0,255,255),
     glBegin(GL_LINES);
     for (size_t i=0;i<deformed_mesh.face.size();i++)
     {
-        size_t IndexP0=deformed_mesh.face[i].Q();
+        //size_t IndexP0=deformed_mesh.face[i].Q();
         for (size_t j=0;j<3;j++)
         {
             bool drawEdge=false;
             drawEdge|=vcg::face::IsBorder(deformed_mesh.face[i],j);
-            size_t IndexP1=deformed_mesh.face[i].FFp(j)->Q();
-            drawEdge|=(IndexP1!=IndexP0);
+            drawEdge|=deformed_mesh.face[i].IsFaceEdgeS(j);
+//            size_t IndexP1=deformed_mesh.face[i].FFp(j)->Q();
+//            drawEdge|=(IndexP1!=IndexP0);
             if (!drawEdge)continue;
             CoordType Pos0=deformed_mesh.face[i].P0(j);
             CoordType Pos1=deformed_mesh.face[i].P1(j);
@@ -278,7 +298,7 @@ void DoColorByDistortion()
 
 void DoColorByPatch()
 {
-    SelectPatchBorderEdges(deformed_mesh);
+    //SelectPatchBorderEdges(deformed_mesh);
     MakePartitionOnQConsistent(deformed_mesh);
     deformed_mesh.ScatterColorByQualityFace();
 }
@@ -441,8 +461,8 @@ void TW_CALL BatchProcess(void *)
 void SetFieldBarSizePosition(QWidget *w)
 {
     int params[2];
-    params[0] = QTDeviceWidth(w) / 4.0; // AntTweakBar Menu size here
-    params[1] = QTDeviceHeight(w) / 2.0 ;
+    params[0] = QTDeviceWidth(w) / 2.0; // AntTweakBar Menu size here
+    params[1] = QTDeviceHeight(w);
     TwSetParam(barFashion, NULL, "size", TW_PARAM_INT32, 2, params);
     params[0] = QTLogicalToDevice(w, 10);
     params[1] = 30;//QTDeviceHeight(w) - params[1] - QTLogicalToDevice(w, 10);
@@ -515,6 +535,10 @@ void InitBar(QWidget *w) // AntTweakBar menu
 
 
     TwAddVarRW(barFashion,"MaxCorners",TW_TYPE_INT32,&PFashion.max_corners," label='Max Corners'");
+    TwAddVarRW(barFashion,"SelfGlue",TW_TYPE_BOOLCPP,&PFashion.allow_self_glue," label='Allow SelfGlue'");
+    TwAddVarRW(barFashion,"Darts",TW_TYPE_BOOLCPP,&PFashion.use_darts," label='Allow Darts'");
+
+
     TwAddButton(barFashion,"TracePaths",TracePath,0,"label='Trace Paths'");
     TwAddVarRW(barFashion,"ParamBound",TW_TYPE_DOUBLE,
                &PFashion.param_boundary," label='Boundary Tolerance'");
@@ -741,16 +765,20 @@ void MyGLWidget::paintGL ()
             //glTranslate(CoordType(uv_box.DimX()/3,0,0));
             vcg::glScale(0.5);
         }
+        glPushAttrib(GL_ALL_ATTRIB_BITS);
+        glDepthRange(0.0001,1);
         MeshDrawing<TraceMesh>::GLDrawUV(deformed_mesh,textured,colored_distortion);
         //deformed_mesh.GLDrawUV(textured,colored_distortion);
         glEnable( GL_LINE_SMOOTH );
         glHint( GL_LINE_SMOOTH_HINT, GL_NICEST );
+        glDepthRange(0,0.999);
         MeshDrawing<TraceMesh>::GLDrawEdgeUV(deformed_mesh);
         //deformed_mesh.GLDrawEdgeUV();
         if (draw_uv_and_3D)
         {
             glPopMatrix();
         }
+        glPopAttrib();
     }
 
 

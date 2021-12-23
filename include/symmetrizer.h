@@ -530,6 +530,27 @@ public:
             else
                 deformed_mesh.vert[OffsetF+i].P()=SymmPlane().Mirror(Pos);
         }
+
+        //then copy the selected edges
+        vcg::tri::UpdateFlags<TriMeshType>::FaceClearFaceEdgeS(deformed_mesh);
+        for (size_t i=0;i<deformed_mesh.face.size()/2;i++)
+        {
+            for (size_t j=0;j<3;j++)
+            {
+                bool IsSelE=half_def_mesh.face[i].IsFaceEdgeS(j);
+                if (!IsSelE)continue;
+
+                deformed_mesh.face[i].SetFaceEdgeS(j);
+
+                size_t OtherE=0;
+                if (j==1)OtherE=2;
+                if (j==2)OtherE=1;
+
+                size_t OffsetF=deformed_mesh.face.size()/2;
+                deformed_mesh.face[OffsetF+i].SetFaceEdgeS(OtherE);
+            }
+        }
+
     }
 
     Symmetrizer(TriMeshType &_deformed_mesh,

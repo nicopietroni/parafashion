@@ -50,7 +50,7 @@ public:
         for (size_t i=0;i<Partitions.size();i++)
         {
             PatchMeshes.push_back(new TriMeshType);
-            PatchManager<TriMeshType>::GetMeshFromPatch(mesh,i,Partitions,(*PatchMeshes.back()));
+            PatchManager<TriMeshType>::GetMeshFromPatch(mesh,i,Partitions,(*PatchMeshes.back()),true);
             (*PatchMeshes.back()).UpdateAttributes();
             vcg::tri::OptimizeUV_ARAP((*PatchMeshes.back()),100,0,true);
 

@@ -7,7 +7,7 @@
 #include <set>
 #include <vcg/complex/algorithms/parametrization/uv_utils.h>
 //#include "marching_squares.h"
-#include <clipper.hpp>
+#include "lib/Clipper/clipper.hpp"
 #include <vcg/complex/algorithms/point_sampling.h>
 #include <wrap/io_trimesh/export.h>
 //#include "./lib/CavalierContours/include/cavc/polylineoffset.hpp"
@@ -276,7 +276,7 @@ public:
         std::cout<<"UV Box Dim X:"<<UVBBox.DimX()<<std::endl;
 
 
-        vector< vector< vector<Point2f> > > outline2VecVec(outline2Vec.size());
+        std::vector< std::vector< std::vector<Point2f> > > outline2VecVec(outline2Vec.size());
         for(size_t i=0;i<outline2Vec.size();++i)
         {
             outline2VecVec[i].resize(1);
