@@ -7,7 +7,7 @@
 #include <tracing/tracer_interface.h>
 #include <tracing/mesh_type.h>
 #include "animation_manager.h"
- 
+
 
 enum PatchMode{PMMinTJuncions,PMAvgTJuncions,PMAllTJuncions};
 
@@ -40,6 +40,8 @@ public:
     bool check_stress;
     bool use_darts;
     bool allow_self_glue;
+    bool remove_along_symmetry;
+
     ScalarType param_boundary;
     size_t max_corners;
     ScalarType max_compression;
@@ -112,89 +114,89 @@ public:
         }
     };
 
-//    void TracePatch(bool SaveStep=true,
-//                    bool DebugMSG=false)
-//    {
-//        if (SaveStep)
-//        {
-//            deformed_mesh.Clear();
-//            half_def_mesh.Clear();
-//            vcg::tri::Append<TraceMesh,TraceMesh>::Mesh(deformed_mesh,deformed_mesh_step2);
-//            vcg::tri::Append<TraceMesh,TraceMesh>::Mesh(half_def_mesh,half_def_mesh_step2);
-//            deformed_mesh.UpdateAttributes();
-//            half_def_mesh.UpdateAttributes();
-//            half_def_mesh.InitRPos();
-//        }
+    //    void TracePatch(bool SaveStep=true,
+    //                    bool DebugMSG=false)
+    //    {
+    //        if (SaveStep)
+    //        {
+    //            deformed_mesh.Clear();
+    //            half_def_mesh.Clear();
+    //            vcg::tri::Append<TraceMesh,TraceMesh>::Mesh(deformed_mesh,deformed_mesh_step2);
+    //            vcg::tri::Append<TraceMesh,TraceMesh>::Mesh(half_def_mesh,half_def_mesh_step2);
+    //            deformed_mesh.UpdateAttributes();
+    //            half_def_mesh.UpdateAttributes();
+    //            half_def_mesh.InitRPos();
+    //        }
 
 
-//        typedef PatchTracer<TriMeshType,MeshArapQuality<TriMeshType> > PTracerType;
+    //        typedef PatchTracer<TriMeshType,MeshArapQuality<TriMeshType> > PTracerType;
 
-//        half_def_mesh.UpdateAttributes();
+    //        half_def_mesh.UpdateAttributes();
 
-//        VertexFieldGraph<TriMeshType> VGraph(half_def_mesh);
-//        VGraph.InitGraph(DebugMSG);
-
-
-
-//        PTracerType PTr(VGraph);
-//        PTr.InitTracer(100,DebugMSG);
-
-//        PTr.MaxVal=max_corners;
-//        PatchGeneralParameters::MaxAdmittable()=max_corners;
-
-//        PTr.split_on_removal=true;
-//        PTr.away_from_singular=true;
-//        PTr.match_valence=match_valence;
-//        PTr.CClarkability=-1;
-//        half_def_mesh.UpdateAttributes();
-//        bool PreRemoveStep=true;
-
-//        if (PMode==PMMinTJuncions)
-//        {
-//            PreRemoveStep=true;
-//            PTr.split_on_removal=false;
-//        }
-//        if (PMode==PMAvgTJuncions)
-//        {
-//            PreRemoveStep=true;
-//            PTr.split_on_removal=true;
-//        }
-//        if (PMode==PMAllTJuncions)
-//        {
-//            PreRemoveStep=false;
-//            PTr.split_on_removal=true;
-//        }
-
-//        if (max_compression<max_tension)
-//        {
-//            MeshArapQuality<TriMeshType>::MaxQ()=max_tension;
-//            MeshArapQuality<TriMeshType>::MinQ()=max_compression;
-//            PTr.check_quality_functor=check_stress;
-//        }
-
-//        //RecursiveProcess<PTracerType>(PTr,100,true,true,PreRemoveStep,false,false,false,DebugMSG);
-
-//        //RecursiveProcessForTexturingWithDarts<PTracerType>(PTr,100,true,true,PreRemoveStep,false,false,false,DebugMSG);
-//        RecursiveProcessForTexturingWithDarts<PTracerType>(PTr,100,true,true,PreRemoveStep,false,false,false,DebugMSG);
+    //        VertexFieldGraph<TriMeshType> VGraph(half_def_mesh);
+    //        VGraph.InitGraph(DebugMSG);
 
 
-//        std::cout<<"Remaining "<<PTr.ChoosenPaths.size()<<" paths"<<std::endl;
-//        //copy partition on quality
-//        for (size_t i=0;i<PTr.FacePartitions.size();i++)
-//            half_def_mesh.face[i].Q()=PTr.FacePartitions[i];
 
-//        //PTr.ColorByPartitions();
-//        Symmetrizer<TriMeshType> Symm(deformed_mesh,reference_mesh);
-//        Symm.CopyPropertiesFromHalfDefMesh(half_def_mesh);
+    //        PTracerType PTr(VGraph);
+    //        PTr.InitTracer(100,DebugMSG);
 
-//        deformed_mesh.UpdateAttributes();
-//        SelectPatchBorderEdges(deformed_mesh);
-//        MakePartitionOnQConsistent(deformed_mesh);
-//        deformed_mesh.ScatterColorByQualityFace();
+    //        PTr.MaxVal=max_corners;
+    //        PatchGeneralParameters::MaxAdmittable()=max_corners;
 
-//        PTr.GetVisualCornersPos(PatchCornerPos);
+    //        PTr.split_on_removal=true;
+    //        PTr.away_from_singular=true;
+    //        PTr.match_valence=match_valence;
+    //        PTr.CClarkability=-1;
+    //        half_def_mesh.UpdateAttributes();
+    //        bool PreRemoveStep=true;
 
-//    }
+    //        if (PMode==PMMinTJuncions)
+    //        {
+    //            PreRemoveStep=true;
+    //            PTr.split_on_removal=false;
+    //        }
+    //        if (PMode==PMAvgTJuncions)
+    //        {
+    //            PreRemoveStep=true;
+    //            PTr.split_on_removal=true;
+    //        }
+    //        if (PMode==PMAllTJuncions)
+    //        {
+    //            PreRemoveStep=false;
+    //            PTr.split_on_removal=true;
+    //        }
+
+    //        if (max_compression<max_tension)
+    //        {
+    //            MeshArapQuality<TriMeshType>::MaxQ()=max_tension;
+    //            MeshArapQuality<TriMeshType>::MinQ()=max_compression;
+    //            PTr.check_quality_functor=check_stress;
+    //        }
+
+    //        //RecursiveProcess<PTracerType>(PTr,100,true,true,PreRemoveStep,false,false,false,DebugMSG);
+
+    //        //RecursiveProcessForTexturingWithDarts<PTracerType>(PTr,100,true,true,PreRemoveStep,false,false,false,DebugMSG);
+    //        RecursiveProcessForTexturingWithDarts<PTracerType>(PTr,100,true,true,PreRemoveStep,false,false,false,DebugMSG);
+
+
+    //        std::cout<<"Remaining "<<PTr.ChoosenPaths.size()<<" paths"<<std::endl;
+    //        //copy partition on quality
+    //        for (size_t i=0;i<PTr.FacePartitions.size();i++)
+    //            half_def_mesh.face[i].Q()=PTr.FacePartitions[i];
+
+    //        //PTr.ColorByPartitions();
+    //        Symmetrizer<TriMeshType> Symm(deformed_mesh,reference_mesh);
+    //        Symm.CopyPropertiesFromHalfDefMesh(half_def_mesh);
+
+    //        deformed_mesh.UpdateAttributes();
+    //        SelectPatchBorderEdges(deformed_mesh);
+    //        MakePartitionOnQConsistent(deformed_mesh);
+    //        deformed_mesh.ScatterColorByQualityFace();
+
+    //        PTr.GetVisualCornersPos(PatchCornerPos);
+
+    //    }
 
     void TracePatch(bool SaveStep=true,
                     bool DebugMSG=false)
@@ -217,7 +219,6 @@ public:
 
         VertexFieldGraph<TriMeshType> VGraph(half_def_mesh);
         VGraph.InitGraph(DebugMSG);
-
 
 
         PTracerType PTr(VGraph);
@@ -275,16 +276,17 @@ public:
         GetPathPos(VGraph,PTr.ChoosenPaths,PathPos);
         half_def_mesh.SelectPos(PathPos,true);
 
-//        std::cout<<"Remaining "<<PTr.ChoosenPaths.size()<<" paths"<<std::endl;
-//        //copy partition on quality
-//        for (size_t i=0;i<PTr.FacePartitions.size();i++)
-//            half_def_mesh.face[i].Q()=PTr.FacePartitions[i];
+        //        std::cout<<"Remaining "<<PTr.ChoosenPaths.size()<<" paths"<<std::endl;
+        //        //copy partition on quality
+        //        for (size_t i=0;i<PTr.FacePartitions.size();i++)
+        //            half_def_mesh.face[i].Q()=PTr.FacePartitions[i];
 
         //PTr.ColorByPartitions();
 
         //then copy everything
         Symmetrizer<TriMeshType> Symm(deformed_mesh,reference_mesh);
         Symm.CopyPropertiesFromHalfDefMesh(half_def_mesh);
+
 
         deformed_mesh.UpdateAttributes();
         //SelectPatchBorderEdges(deformed_mesh);
@@ -394,6 +396,107 @@ public:
         vcg::tri::Append<TriMeshType,TriMeshType>::Mesh(reference_mesh_step0,reference_mesh);
     }
 
+    void RemoveOnSymmetryPathIfPossible()
+    {
+        //select along boders, so it is kept as new border when merged
+        //std::set<std::pair<CoordType,CoordType> > BorderE;
+        for (size_t i=0;i<deformed_mesh.face.size();i++)
+            for (size_t j=0;j<3;j++)
+            {
+                if (!vcg::face::IsBorder(deformed_mesh.face[i],j))continue;
+                deformed_mesh.face[i].SetFaceEdgeS(j);
+            }
+
+        //merge mesh
+        vcg::tri::Clean<TraceMesh>::RemoveDuplicateVertex(deformed_mesh);
+        vcg::tri::Allocator<TraceMesh>::CompactEveryVector(deformed_mesh);
+        deformed_mesh.UpdateAttributes();
+
+        //update the field
+        typedef PatchTracer<TriMeshType,MeshArapQuality<TriMeshType> > PTracerType;
+        deformed_mesh.UpdateAttributes();
+        vcg::tri::CrossField<TriMeshType>::UpdateSingularByCross(deformed_mesh);
+        vcg::tri::CrossField<TriMeshType>::SetVertCrossVectorFromFace(deformed_mesh);
+
+        //reinit the graph
+        VertexFieldGraph<TriMeshType> VGraph(deformed_mesh);
+        VGraph.InitGraph(false);
+
+        //save the selected ones
+        std::set<std::pair<CoordType,CoordType> > EdgeS;
+        for (size_t i=0;i<deformed_mesh.face.size();i++)
+            for (size_t j=0;j<3;j++)
+            {
+                if (!deformed_mesh.face[i].IsFaceEdgeS(j))continue;
+
+                CoordType P0=deformed_mesh.face[i].P0(j);
+                CoordType P1=deformed_mesh.face[i].P1(j);
+
+                std::pair<CoordType,CoordType> Key(std::min(P0,P1),std::max(P0,P1));
+                EdgeS.insert(Key);
+            }
+
+        //initialize the tracer
+        PTracerType PTr(VGraph);
+        PTr.InitTracer(100,false);
+
+        PTr.CClarkability=-1;
+        PTr.match_valence=false;
+
+        if (allow_self_glue || use_darts)
+        {
+            PTr.MinVal=0;
+            PTr.CheckQuadrangulationLimits=false;
+        }
+        PTr.MaxVal=max_corners;
+        //PTr.Concave_Need=1;
+        PTr.AllowDarts=use_darts;
+        PTr.AllowSelfGluedPatch=allow_self_glue;
+
+        if (max_compression<max_tension)
+        {
+            //std::cout<<"AA"<<std::endl;
+            MeshArapQuality<TriMeshType>::MaxQ()=max_tension;
+            MeshArapQuality<TriMeshType>::MinQ()=max_compression;
+            PTr.check_quality_functor=check_stress;
+        }
+
+        //then restore the selected
+        for (size_t i=0;i<deformed_mesh.face.size();i++)
+            for (size_t j=0;j<3;j++)
+            {
+                CoordType P0=deformed_mesh.face[i].P0(j);
+                CoordType P1=deformed_mesh.face[i].P1(j);
+                std::pair<CoordType,CoordType> Key(std::min(P0,P1),std::max(P0,P1));
+                if (EdgeS.count(Key)==0)continue;
+                deformed_mesh.face[i].SetFaceEdgeS(j);
+            }
+
+        //reinitialize path from selected
+        PTr.ReinitPathFromEdgeSel();
+
+        if (use_darts)
+            PTr.SplitIntoIntervals();
+
+        //then set only removeable the ones that are on symmetry line
+        PTr.SetAllUnRemoveable();
+        for (size_t i=0;i<PTr.ChoosenPaths.size();i++)
+            for (size_t j=0;j<PTr.ChoosenPaths[i].PathNodes.size()-1;j++)
+            {
+                size_t N0=PTr.ChoosenPaths[i].PathNodes[j];
+                size_t N1=PTr.ChoosenPaths[i].PathNodes[j+1];
+                CoordType P0=VGraph.NodePos(N0);
+                CoordType P1=VGraph.NodePos(N1);
+                CoordType AvgP=(P0+P1)/2;
+                CoordType Proj=Symmetrizer<TraceMesh>::SymmPlane().Projection(AvgP);
+                if ((Proj-AvgP).Norm()<0.00001)
+                    PTr.ChoosenPaths[i].Unremovable=false;
+            }
+        //then do the actual remove
+        PTr.RemovePaths();
+        //update the selection on the mesh
+        SelectMeshPatchBorders(VGraph,PTr.ChoosenPaths);
+    }
 
     void BatchProcess(const std::vector<std::vector<CoordType> > &PickedPoints,
                       bool writeDebug=false,
@@ -406,6 +509,10 @@ public:
         ComputeField(false);
         size_t t2=clock();
         TracePatch(false,writeDebug);
+
+        if (remove_along_symmetry)
+            RemoveOnSymmetryPathIfPossible();
+
         size_t t3=clock();
         DoParametrize();
         size_t t4=clock();

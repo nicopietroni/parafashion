@@ -82,6 +82,8 @@ vcg::GLField<TraceMesh> glField;
 
 typedef typename TraceMesh::ScalarType ScalarType;
 typedef typename TraceMesh::CoordType CoordType;
+typedef typename TraceMesh::FaceType TraceFaceType;
+typedef typename vcg::face::Pos<TraceFaceType> TracePosType;
 
 int Iterations;
 ScalarType EdgeStep;
@@ -120,6 +122,8 @@ PathGL<TraceMesh> GPath;
 Parafashion<TraceMesh> PFashion(deformed_mesh,reference_mesh);
 AnimationManager<TraceMesh> AManager(deformed_mesh);
 
+//std::vector<std::vector<TracePosType > > TestPosSeq;
+
 void GLDrawPoints(const std::vector<CoordType> &DrawPos,
                   const ScalarType &GLSize,const vcg::Color4b &Col)
 {
@@ -138,6 +142,45 @@ void GLDrawPoints(const std::vector<CoordType> &DrawPos,
     }
     glPopAttrib();
 }
+
+
+//void GlDrawPosSeq()
+//{
+//    glPushAttrib(GL_ALL_ATTRIB_BITS);
+//    glDisable(GL_LIGHTING);
+//    glDepthRange(0,0.9995);
+//    glLineWidth(20);
+//    glPointSize(40);
+
+//    for (size_t i=0;i<TestPosSeq.size();i++)
+//    {
+//        vcg::Color4b col;
+//        col=vcg::Color4b::Scatter(TestPosSeq.size(),i);
+//        vcg::glColor(col);
+//        glBegin(GL_LINES);
+//        for (size_t j=0;j<TestPosSeq[i].size();j++)
+//        {
+//           CoordType P0=TestPosSeq[i][j].V()->P();
+//           CoordType P1=TestPosSeq[i][j].VFlip()->P();
+//           vcg::glVertex(P0);
+//           vcg::glVertex(P1);
+//        }
+//        glEnd();
+//    }
+
+//    vcg::Color4b col=vcg::Color4b::Red;
+//    vcg::glColor(col);
+//    glBegin(GL_POINTS);
+//    for (size_t i=0;i<deformed_mesh.vert.size();i++)
+//    {
+//        if (!deformed_mesh.vert[i].IsS())continue;
+//        CoordType P=deformed_mesh.vert[i].P();
+//        vcg::glVertex(P);
+//    }
+//    glEnd();
+
+//    glPopAttrib();
+//}
 
 template <class ScalarType>
 void GlDrawPlane(const vcg::Plane3<ScalarType> &Pl,
@@ -346,11 +389,13 @@ void DoTracePath()
     PFashion.TracePatch();
     if (hasFrames)
         AManager.UpdateProjectionBasis();
+    //TestPosSeq.clear();
 }
 
 void TW_CALL TracePath(void *)
 {
     DoTracePath();
+    //TestPosSeq.clear();
 }
 
 void TW_CALL SaveData(void *)
@@ -420,6 +465,26 @@ void DoSmoothField()
 
 }
 
+void TW_CALL RemoveAlongSymmetryLine(void *)
+{
+//    for (size_t i=0;i<deformed_mesh.face.size();i++)
+//        for (size_t j=0;j<3;j++)
+//        {
+//            if (!vcg::face::IsBorder(deformed_mesh.face[i],j))continue;
+//            deformed_mesh.face[i].SetFaceEdgeS(j);
+//        }
+//    vcg::tri::Clean<TraceMesh>::RemoveDuplicateVertex(deformed_mesh);
+//    deformed_mesh.UpdateAttributes();
+//    RetrievePosSeqFromSelEdges(deformed_mesh,TestPosSeq);
+    //vcg::tri::io::ExporterPLY<TraceMesh>::Save(deformed_mesh,"test_mesh.ply");
+
+    PFashion.RemoveOnSymmetryPathIfPossible();
+    DoParametrize();
+    DoColorByPatch();
+
+}
+
+
 void TW_CALL SmoothField(void *)
 {
     DoSmoothField();
@@ -450,6 +515,8 @@ void DoBatchProcess()
     parametrized=true;
 
     UpdateBaseColorMesh();
+
+    //TestPosSeq.clear();
 }
 
 void TW_CALL BatchProcess(void *)
@@ -462,7 +529,7 @@ void SetFieldBarSizePosition(QWidget *w)
 {
     int params[2];
     params[0] = QTDeviceWidth(w) / 2.0; // AntTweakBar Menu size here
-    params[1] = QTDeviceHeight(w);
+    params[1] = QTDeviceHeight(w)*1.5;
     TwSetParam(barFashion, NULL, "size", TW_PARAM_INT32, 2, params);
     params[0] = QTLogicalToDevice(w, 10);
     params[1] = 30;//QTDeviceHeight(w) - params[1] - QTLogicalToDevice(w, 10);
@@ -546,6 +613,7 @@ void InitBar(QWidget *w) // AntTweakBar menu
     TwAddButton(barFashion,"Parametrize",Parametrize,0,"label='Parametrize Deformed'");
 
     TwAddSeparator(barFashion,NULL,NULL);
+    TwAddVarRW(barFashion,"RemoveSym",TW_TYPE_BOOLCPP,&PFashion.remove_along_symmetry," label='Rem Symmetry'");
     TwAddVarRW(barFashion,"checkStress",TW_TYPE_BOOLCPP,&PFashion.check_stress," label='Check Stress'");
     TwAddVarRW(barFashion,"MaxCompr",TW_TYPE_DOUBLE,&PFashion.max_compression," label='Max Compression'");
     TwAddVarRW(barFashion,"MaxTens",TW_TYPE_DOUBLE,&PFashion.max_tension," label='Max Tension'");
@@ -553,6 +621,7 @@ void InitBar(QWidget *w) // AntTweakBar menu
 
     TwAddButton(barFashion,"BatchProcess",BatchProcess,0,"label='Batch Process'");
     //TwAddButton(barFashion,"BatchProcess 2",BatchProcess2,0,"label='Batch Process 2'");
+    TwAddButton(barFashion,"RemoveAlongSym",RemoveAlongSymmetryLine,0,"label='Remove Along Symmetry'");
 
     TwAddButton(barFashion,"SaveData",SaveData,0,"label='Save Data'");
 
@@ -753,8 +822,6 @@ void MyGLWidget::paintGL ()
     if (colored_distortion)
         GLDrawLegenda();
 
-
-
     if ((parametrized)&&(drawParam))
     {
         if (draw_uv_and_3D)
@@ -895,10 +962,13 @@ void MyGLWidget::paintGL ()
     //TPath.GLDrawSnapped();
     //TPath.GlDrawPath();
 
+    //GlDrawPosSeq();
+
     if (draw_uv_and_3D)
     {
         glPopMatrix();
     }
+
 
     glPopMatrix();
     glPopMatrix();
