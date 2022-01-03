@@ -12,6 +12,8 @@
 #include <wrap/io_trimesh/export.h>
 //#include "./lib/CavalierContours/include/cavc/polylineoffset.hpp"
 //#include <vcg/complex/algorithms/update/flag.h>
+#include <QSvgRenderer>
+#include <QIcon>
 
 template <class TriMeshType>
 class SvgExporter
@@ -26,12 +28,31 @@ class SvgExporter
                             std::vector< std::vector<CoordType> > &outline3Vec,
                             float scaleVal)
     {
+        mesh.UpdateAttributes();
+        //make the selection coherent
+        for (size_t i=0;i<mesh.face.size();i++)
+        {
+            for (size_t j=0;j<3;j++)
+            {
+                if (vcg::face::IsBorder(mesh.face[i],j))
+                {
+                    mesh.face[i].SetFaceEdgeS(j);
+                    continue;
+                }
+                if (!mesh.face[i].IsFaceEdgeS(j))continue;
+                FaceType *FOpp=mesh.face[i].FFp(j);
+                int EOpp=mesh.face[i].FFi(j);
+                FOpp->SetFaceEdgeS(EOpp);
+            }
+        }
+        //vcg::tri::io::ExporterPLY<TriMeshType>::Save(mesh,"test.ply");
+
         outline2Vec.clear();
         std::set<std::pair<size_t,size_t> > FaceEdge;
 
         for (size_t i=0;i<mesh.face.size();i++)
         {
-            if (mesh.face[i].IsS())continue;
+            //if (mesh.face[i].IsS())continue;
             for (size_t j=0;j<3;j++)
             {
                 if (!mesh.face[i].IsFaceEdgeS(j))continue;
@@ -40,9 +61,12 @@ class SvgExporter
                 outline3Vec.resize(outline3Vec.size()+1);
                 vcg::face::Pos<FaceType> PosF(&mesh.face[i],j);
                 vcg::face::Pos<FaceType> PosInit=PosF;
+                std::cout<<"Starting new polyline"<<std::endl;
                 do{
                     size_t IndexF=vcg::tri::Index(mesh,PosF.F());
                     size_t IndexE=PosF.E();
+                    std::cout<<"IndexF"<<IndexF<<std::endl;
+                    std::cout<<"IndexE"<<IndexE<<std::endl;
                     std::pair<size_t,size_t> Key(IndexF,IndexE);
                     assert(FaceEdge.count(Key)==0);
                     FaceEdge.insert(std::pair<size_t,size_t>(IndexF,IndexE));
@@ -50,6 +74,7 @@ class SvgExporter
                     UV.Import(PosF.F()->WT(PosF.E()).P()*scaleVal);
                     outline2Vec.back().push_back(UV);
                     outline3Vec.back().push_back(PosF.V()->P());
+                    std::cout<<"Step"<<std::endl;
                     PosF.NextEdgeS();
                 }while (PosF!=PosInit);
             }
@@ -202,15 +227,15 @@ class SvgExporter
 public:
 
     static void ExportUVPolyline(TriMeshType &mesh,
-                                 const char *path,
+                                 const char *pathSVG,
+                                 const char *pathPNG,
+                                 QImage &SVGTxt,
                                  float scaleVal=1000,
                                  float penwidth=4,
                                  float boundSize=30,
                                  float fontsize=15)
     {
-
         //vcg::Box2<ScalarType> uv_box=vcg::tri::UV_Utils<CMesh>::PerWedgeUVBox(mesh);
-
 
         std::vector< std::vector<vcg::Point2f> > outline2Vec;
         std::vector< std::vector<CoordType> > outline3Vec;
@@ -283,90 +308,26 @@ public:
             outline2VecVec[i][0]=outline2Vec[i];
         }
 
-        Outline2Dumper::dumpOutline2VecSVG(path,outline2VecVec,trVec,Label,trText,LabelRad,pp);
-        //Outline2Dumper::dumpOutline2VecSVG(path,outline2Vec,trVec,pp);
-        //Outline2Dumper::dumpOutline2VecSVG(path,outline2VecVec,trVec,pp);
+        Outline2Dumper::dumpOutline2VecSVG(pathSVG,outline2VecVec,trVec,Label,trText,LabelRad,pp);
+
+
+        SVGTxt = QIcon(pathSVG).pixmap(QSize(4000,4000)).toImage();
+        for (size_t x=0;x<SVGTxt.width()*SVGTxt.height();x++)
+            {
+                size_t baseI=x*4;
+                size_t alpha=baseI+3;
+                if (SVGTxt.bits()[alpha]==0)
+                {
+                    SVGTxt.bits()[baseI]=255;
+                    SVGTxt.bits()[baseI+1]=255;
+                    SVGTxt.bits()[baseI+2]=255;
+                    SVGTxt.bits()[baseI+3]=255;
+                }
+            }
+
+        // Save, image format based on file extension
+        SVGTxt.save(pathPNG);
     }
-
-    //    static void ExportUVPolyline(TriMeshType &mesh,
-    //                                 const char *path,
-    //                                 float scaleVal=1000,
-    //                                 float penwidth=4,
-    //                                 float boundSize=20,
-    //                                 float fontsize=10)
-    //    {
-
-    //        std::vector< std::vector<vcg::Point2f> > outline2Vec;
-    //        std::vector< std::vector<CoordType> > outline3Vec;
-    //        GetOutLines(mesh,outline2Vec,outline3Vec,scaleVal);
-
-
-    //        Outline2Dumper::Param pp;
-    //        pp.penWidth=penwidth;
-    //        pp.fontSize=fontsize;
-
-    //        std::vector<std::vector<std::string> > Label;
-    //        std::vector<std::vector<float> > LabelRad;
-    //        std::vector<std::vector<vcg::Similarity2f> > trText;
-
-    //        trText.resize(outline2Vec.size());
-    //        LabelRad.resize(outline2Vec.size());
-    //        Label.resize(outline2Vec.size());
-
-    //        if (fontsize!=0)
-    //        {
-    //            std::vector<std::vector<vcg::Point2f> > Pos2D;
-    //            std::vector<std::vector<size_t> > labelInt;
-    //            SawingLabels(outline3Vec,outline2Vec,Pos2D,labelInt,fontsize*4);
-    //            for (size_t i=0;i<labelInt.size();i++)
-    //                for (size_t j=0;j<labelInt[i].size();j++)
-    //                {
-    //                    vcg::Similarity2f Sim;
-    //                    Sim.tra=Pos2D[i][j];
-
-    //                    trText[i].push_back(Sim);
-    //                    LabelRad[i].push_back(fontsize*2);
-    //                    Label[i].push_back(std::to_string((int)labelInt[i][j]));
-    //                }
-    //            }
-
-
-    //        //create the Offset
-    //        if (boundSize!=0)
-    //        {
-    //            std::vector< std::vector<vcg::Point2f> > OffSetted;
-    //            CreateOffsetBoundary(outline2Vec,OffSetted,boundSize);
-    //            outline2Vec.insert(outline2Vec.end(),OffSetted.begin(),OffSetted.end());
-    //        }
-
-    //        std::vector<vcg::Similarity2f> trVec;
-    //        trVec.resize(outline2Vec.size());
-    //        trText.resize(outline2Vec.size());
-    //        LabelRad.resize(outline2Vec.size());
-    //        Label.resize(outline2Vec.size());
-
-    //        //get the bounding box
-    //        vcg::Box2<ScalarType> UVBBox=GetBox(mesh,scaleVal,boundSize);
-    //        pp.height=UVBBox.DimY();
-    //        pp.width=UVBBox.DimX();
-
-    //        vector< vector< vector<vcg::Point2f> > > outline2VecVec;
-    ////        (const char * imageName,
-    ////                                               vector< vector< vector<Point2f> > > &outline2VecVec,
-    ////                                               vector<Similarity2f> &trVec,
-    ////                                               vector< vector< string> > &labelVecVec,
-    ////                                               vector< vector<Similarity2f> > &labelTrVecVec,
-    ////                                               vector<vector<float> >&labelRadVecVec,
-    ////                                               Outline2Dumper::Param &pp)
-    //        outline2VecVec.resize(1);//outline2Vec.size());
-    //        outline2VecVec[0]=outline2Vec;
-    ////        for (size_t i=0;i<outline2Vec.size();i++)
-    ////            outline2VecVec[i].push_back(outline2Vec[i]);
-
-    //        Outline2Dumper::dumpOutline2VecSVG(path,outline2VecVec,trVec,pp);
-    //        //Outline2Dumper::dumpOutline2VecSVG(path,outline2VecVec,trVec,Label,trText,LabelRad,pp);
-    //        //Outline2Dumper::dumpOutline2VecSVG(path,outline2Vec,trVec,pp);
-    //    }
 };
 
 #endif

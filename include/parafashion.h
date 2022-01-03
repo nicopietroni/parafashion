@@ -537,6 +537,7 @@ public:
         max_tension=0.05;
         use_darts=true;
         allow_self_glue=true;
+        remove_along_symmetry=false;
     }
 };
 

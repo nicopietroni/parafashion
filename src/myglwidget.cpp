@@ -100,10 +100,8 @@ bool hasFrames=false;
 
 int xMouse,yMouse;
 
-
 //typedef FieldSmoother<TraceMesh> FieldSmootherType;
 //FieldSmootherType::SmoothParam FieldParam;
-
 vcg::GLW::DrawMode drawmode=vcg::GLW::DMSmooth;     /// the current drawmode
 
 bool do_rotate=false;
@@ -123,6 +121,11 @@ Parafashion<TraceMesh> PFashion(deformed_mesh,reference_mesh);
 AnimationManager<TraceMesh> AManager(deformed_mesh);
 
 //std::vector<std::vector<TracePosType > > TestPosSeq;
+
+QImage SVGTxt;
+GLuint layoutTxtIdx=0;
+bool HasLayoutTxt=false;
+bool has_to_update_layout=false;
 
 void GLDrawPoints(const std::vector<CoordType> &DrawPos,
                   const ScalarType &GLSize,const vcg::Color4b &Col)
@@ -249,8 +252,8 @@ void GLDrawPatchEdges(vcg::Color4b col=vcg::Color4b(0,0,255,255),
             bool drawEdge=false;
             drawEdge|=vcg::face::IsBorder(deformed_mesh.face[i],j);
             drawEdge|=deformed_mesh.face[i].IsFaceEdgeS(j);
-//            size_t IndexP1=deformed_mesh.face[i].FFp(j)->Q();
-//            drawEdge|=(IndexP1!=IndexP0);
+            //            size_t IndexP1=deformed_mesh.face[i].FFp(j)->Q();
+            //            drawEdge|=(IndexP1!=IndexP0);
             if (!drawEdge)continue;
             CoordType Pos0=deformed_mesh.face[i].P0(j);
             CoordType Pos1=deformed_mesh.face[i].P1(j);
@@ -418,8 +421,8 @@ void TW_CALL SaveData(void *)
 
     saveM.UpdateAttributes();
     vcg::tri::io::ExporterOBJ<TraceMesh>::Save(saveM,saveMeshName.c_str(),
-                                           vcg::tri::io::Mask::IOM_WEDGTEXCOORD|
-                                           vcg::tri::io::Mask::IOM_FACECOLOR);
+                                               vcg::tri::io::Mask::IOM_WEDGTEXCOORD|
+                                               vcg::tri::io::Mask::IOM_FACECOLOR);
 
     //THEN SAVE THE PATCH DATA
     std::string pathPartitions=ProjM;
@@ -434,10 +437,19 @@ void TW_CALL SaveData(void *)
     //SAVE THE SVG
     std::string pathPatch=ProjM;
     pathPatch=ProjM+"_patch.svg";
+    std::string pathPatchPNG=ProjM;
+    pathPatchPNG=ProjM+"_patch.png";
     float scale=1000;
-    SvgExporter<TraceMesh>::ExportUVPolyline(deformed_mesh,pathPatch.c_str(),scale,4,
-                                         PFashion.param_boundary*scale,
-                                         PFashion.param_boundary*scale*0.75);
+    SvgExporter<TraceMesh>::ExportUVPolyline(deformed_mesh,
+                                             pathPatch.c_str(),
+                                             pathPatchPNG.c_str(),
+                                             SVGTxt,
+                                             scale,4,
+                                             PFashion.param_boundary*scale,
+                                             PFashion.param_boundary*scale*0.75);
+    //prepare the texure
+    HasLayoutTxt=true;
+    has_to_update_layout=true;
 
     //THEN save the mesh in UV
     std::string pathUV=ProjM;
@@ -467,15 +479,15 @@ void DoSmoothField()
 
 void TW_CALL RemoveAlongSymmetryLine(void *)
 {
-//    for (size_t i=0;i<deformed_mesh.face.size();i++)
-//        for (size_t j=0;j<3;j++)
-//        {
-//            if (!vcg::face::IsBorder(deformed_mesh.face[i],j))continue;
-//            deformed_mesh.face[i].SetFaceEdgeS(j);
-//        }
-//    vcg::tri::Clean<TraceMesh>::RemoveDuplicateVertex(deformed_mesh);
-//    deformed_mesh.UpdateAttributes();
-//    RetrievePosSeqFromSelEdges(deformed_mesh,TestPosSeq);
+    //    for (size_t i=0;i<deformed_mesh.face.size();i++)
+    //        for (size_t j=0;j<3;j++)
+    //        {
+    //            if (!vcg::face::IsBorder(deformed_mesh.face[i],j))continue;
+    //            deformed_mesh.face[i].SetFaceEdgeS(j);
+    //        }
+    //    vcg::tri::Clean<TraceMesh>::RemoveDuplicateVertex(deformed_mesh);
+    //    deformed_mesh.UpdateAttributes();
+    //    RetrievePosSeqFromSelEdges(deformed_mesh,TestPosSeq);
     //vcg::tri::io::ExporterPLY<TraceMesh>::Save(deformed_mesh,"test_mesh.ply");
 
     PFashion.RemoveOnSymmetryPathIfPossible();
@@ -560,9 +572,9 @@ void InitBar(QWidget *w) // AntTweakBar menu
     TwAddVarRW(barFashion,"doRotate",TW_TYPE_BOOLCPP, &do_rotate," label='Rotate'");
 
     TwEnumVal field_anim_mode[3] = { {FANone, "Field Anim None"},
-                               {FACurvature, "Field Anim Curv"},
-                               {FAStretchCompress, "Field Anim Stretch/Compress"}
-                             };
+                                     {FACurvature, "Field Anim Curv"},
+                                     {FAStretchCompress, "Field Anim Stretch/Compress"}
+                                   };
     TwType fieldAnimMode = TwDefineEnum("FieldAnimMode", field_anim_mode, 3);
     TwAddVarRW(barFashion, "Field Anim Mode", fieldAnimMode, &FAnimMode, " keyIncr='<' keyDecr='>' help='Change Field Anim mode.' ");
 
@@ -793,6 +805,26 @@ void MyGLWidget::resizeGL (int w, int h)
 
 void MyGLWidget::paintGL ()
 {
+    if (has_to_update_layout)
+    {
+            glGenTextures( 1, & layoutTxtIdx );
+            glEnable(GL_TEXTURE_2D);
+            glBindTexture( GL_TEXTURE_2D, layoutTxtIdx );
+            glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
+            glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
+            glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT );
+            glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT );
+            glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+            //load texture at level i
+            //txt_image.
+
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, SVGTxt.width(), SVGTxt.height(), 0, GL_BGRA_EXT, GL_UNSIGNED_BYTE, SVGTxt.constBits());
+            glDisable(GL_TEXTURE_2D);
+            glBindTexture( GL_TEXTURE_2D, 0 );
+            has_to_update_layout=false;
+            //std::cout<<"LOADED TXT"<<std::endl;
+    }
+
     if (do_rotate)
         timerRot->start(0);
     else
@@ -841,10 +873,27 @@ void MyGLWidget::paintGL ()
         glDepthRange(0,0.999);
         MeshDrawing<TraceMesh>::GLDrawEdgeUV(deformed_mesh);
         //deformed_mesh.GLDrawEdgeUV();
+
         if (draw_uv_and_3D)
         {
             glPopMatrix();
+            //            glMatrixMode(GL_MODELVIEW);
+            //            glLoadIdentity();
+            if (HasLayoutTxt)
+            {
+                glPushMatrix();
+                glTranslate(CoordType(0.8,-1,0));
+                //vcg::glScale(0.5);
+                MeshDrawing<TraceMesh>::GLDrawSVGLayout(SVGTxt.width(),
+                                                        SVGTxt.height(),
+                                                        layoutTxtIdx);
+                glPopMatrix();
+            }
         }
+        //        if (draw_uv_and_3D)
+        //        {
+        //            glPopMatrix();
+        //        }
         glPopAttrib();
     }
 
@@ -876,12 +925,12 @@ void MyGLWidget::paintGL ()
     {
         if (FAnimMode==FACurvature)
             vcg::GLField<TraceMesh>::GLDrawFaceField(deformed_mesh,false,false,0.007,
-                                                 AManager.MaxAnisotropy(),0,false);
+                                                     AManager.MaxAnisotropy(),0,false);
 
         if (FAnimMode==FAStretchCompress)
             vcg::GLField<TraceMesh>::GLDrawFaceField(deformed_mesh,false,false,0.007,
-                                                AManager.MaxStretchCompress(),
-                                                -AManager.MaxStretchCompress(),true);
+                                                     AManager.MaxStretchCompress(),
+                                                     -AManager.MaxStretchCompress(),true);
     }
 
     if ((drawDefMesh)&&(draw3D))
@@ -1028,7 +1077,7 @@ void MyGLWidget::keyReleaseEvent (QKeyEvent * e)
     if (e->key () == Qt::Key_Space)
     {
         spacebar_being_pressed = false;
-        return; // This gets called often when spacebar is pressed... don't updateGL 
+        return; // This gets called often when spacebar is pressed... don't updateGL
     }
     updateGL ();
 }
@@ -1042,7 +1091,7 @@ void MyGLWidget::keyPressEvent (QKeyEvent * e)
     if (e->key () == Qt::Key_Alt)  track.ButtonDown (QT2VCG (Qt::NoButton, Qt::AltModifier));
     if (e->key () == Qt::Key_Space) {
         spacebar_being_pressed = true;
-    } 
+    }
 
     TwKeyPressQt(e);
     updateGL ();
