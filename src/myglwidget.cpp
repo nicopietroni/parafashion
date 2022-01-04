@@ -401,6 +401,44 @@ void TW_CALL TracePath(void *)
     //TestPosSeq.clear();
 }
 
+void DoGenerateSVG(std::string ProjM)
+{
+    //THEN SAVE THE PATCH DATA
+    std::string pathPartitions=ProjM;
+    pathPartitions=ProjM+"_patch.txt";
+    FILE *F=fopen(pathPartitions.c_str(),"wt");
+    assert(F!=NULL);
+    fprintf(F,"%d\n",(int)deformed_mesh.face.size());
+    for (size_t i=0;i<deformed_mesh.face.size();i++)
+        fprintf(F,"%d\n",(int)deformed_mesh.face[i].Q());
+    fclose(F);
+
+    //SAVE THE SVG
+    std::string pathPatch=ProjM;
+    pathPatch=ProjM+"_patch.svg";
+    std::string pathPatchPNG=ProjM;
+    pathPatchPNG=ProjM+"_patch.png";
+    float scale=1000;
+    SvgExporter<TraceMesh>::ExportUVPolyline(deformed_mesh,
+                                             pathPatch.c_str(),
+                                             pathPatchPNG.c_str(),
+                                             SVGTxt,
+                                             scale,4,
+                                             PFashion.param_boundary*scale,
+                                             PFashion.param_boundary*scale*0.75);
+    //prepare the texure
+    HasLayoutTxt=true;
+    has_to_update_layout=true;
+}
+
+void TW_CALL GenerateSVG(void *)
+{
+    std::string ProjM=pathDef;
+    size_t indexExt=ProjM.find_last_of(".");
+    ProjM=ProjM.substr(0,indexExt);
+    DoGenerateSVG(ProjM);
+}
+
 void TW_CALL SaveData(void *)
 {
     //get the path
@@ -434,22 +472,24 @@ void TW_CALL SaveData(void *)
         fprintf(F,"%d\n",(int)deformed_mesh.face[i].Q());
     fclose(F);
 
-    //SAVE THE SVG
-    std::string pathPatch=ProjM;
-    pathPatch=ProjM+"_patch.svg";
-    std::string pathPatchPNG=ProjM;
-    pathPatchPNG=ProjM+"_patch.png";
-    float scale=1000;
-    SvgExporter<TraceMesh>::ExportUVPolyline(deformed_mesh,
-                                             pathPatch.c_str(),
-                                             pathPatchPNG.c_str(),
-                                             SVGTxt,
-                                             scale,4,
-                                             PFashion.param_boundary*scale,
-                                             PFashion.param_boundary*scale*0.75);
-    //prepare the texure
-    HasLayoutTxt=true;
-    has_to_update_layout=true;
+//    //SAVE THE SVG
+//    std::string pathPatch=ProjM;
+//    pathPatch=ProjM+"_patch.svg";
+//    std::string pathPatchPNG=ProjM;
+//    pathPatchPNG=ProjM+"_patch.png";
+//    float scale=1000;
+//    SvgExporter<TraceMesh>::ExportUVPolyline(deformed_mesh,
+//                                             pathPatch.c_str(),
+//                                             pathPatchPNG.c_str(),
+//                                             SVGTxt,
+//                                             scale,4,
+//                                             PFashion.param_boundary*scale,
+//                                             PFashion.param_boundary*scale*0.75);
+//    //prepare the texure
+//    HasLayoutTxt=true;
+//    has_to_update_layout=true;
+
+    DoGenerateSVG(ProjM);
 
     //THEN save the mesh in UV
     std::string pathUV=ProjM;
@@ -634,6 +674,8 @@ void InitBar(QWidget *w) // AntTweakBar menu
     TwAddButton(barFashion,"BatchProcess",BatchProcess,0,"label='Batch Process'");
     //TwAddButton(barFashion,"BatchProcess 2",BatchProcess2,0,"label='Batch Process 2'");
     TwAddButton(barFashion,"RemoveAlongSym",RemoveAlongSymmetryLine,0,"label='Remove Along Symmetry'");
+    TwAddButton(barFashion,"GenerateSVG",GenerateSVG,0,"label='Generate SVG'");
+
 
     TwAddButton(barFashion,"SaveData",SaveData,0,"label='Save Data'");
 
@@ -803,6 +845,43 @@ void MyGLWidget::resizeGL (int w, int h)
 }
 
 
+static void GLDrawSVGLayout(size_t sizeU,
+                            size_t sizeV,
+                            GLuint TxtIndex)
+{
+    glPushAttrib(GL_ALL_ATTRIB_BITS);
+    glPushMatrix();
+
+    ScalarType MaxSize=std::max(sizeU,sizeV);
+    ScalarType DimX=sizeU/MaxSize;
+    ScalarType DimY=sizeV/MaxSize;
+
+    glDisable(GL_LIGHTING);
+    glDisable(GL_LIGHT0);
+
+    if (TxtIndex>=0)
+    {
+        glActiveTexture(GL_TEXTURE0);
+        glEnable(GL_TEXTURE_2D);
+        glBindTexture(GL_TEXTURE_2D, TxtIndex);
+        //std::cout<<"USE TXT"<<std::endl;
+    }
+    vcg::glColor(vcg::Color4b(255,255,255,255));
+    glBegin(GL_QUADS);
+        vcg::glTexCoord(vcg::Point2<ScalarType>(0,0));
+        vcg::glVertex(CoordType(0,0,0));
+        vcg::glTexCoord(vcg::Point2<ScalarType>(1,0));
+        vcg::glVertex(CoordType(DimX,0,0));
+        vcg::glTexCoord(vcg::Point2<ScalarType>(1,1));
+        vcg::glVertex(CoordType(DimX,DimY,0));
+        vcg::glTexCoord(vcg::Point2<ScalarType>(0,1));
+        vcg::glVertex(CoordType(0,DimY,0));
+    glEnd();
+
+    glPopMatrix();
+    glPopAttrib();
+}
+
 void MyGLWidget::paintGL ()
 {
     if (has_to_update_layout)
@@ -884,9 +963,7 @@ void MyGLWidget::paintGL ()
                 glPushMatrix();
                 glTranslate(CoordType(0.8,-1,0));
                 //vcg::glScale(0.5);
-                MeshDrawing<TraceMesh>::GLDrawSVGLayout(SVGTxt.width(),
-                                                        SVGTxt.height(),
-                                                        layoutTxtIdx);
+                GLDrawSVGLayout(SVGTxt.width(),SVGTxt.height(),layoutTxtIdx);
                 glPopMatrix();
             }
         }
