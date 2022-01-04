@@ -52,7 +52,8 @@ public:
             PatchMeshes.push_back(new TriMeshType);
             PatchManager<TriMeshType>::GetMeshFromPatch(mesh,i,Partitions,(*PatchMeshes.back()),true);
             (*PatchMeshes.back()).UpdateAttributes();
-            vcg::tri::OptimizeUV_ARAP((*PatchMeshes.back()),100,0,true);
+            vcg::tri::InitializeArapWithLSCM((*PatchMeshes.back()),0);
+            //vcg::tri::OptimizeUV_ARAP((*PatchMeshes.back()),100,0,true);
 
 //            vcg::Box2<ScalarType> uv_box=vcg::tri::UV_Utils<TriMeshType>::PerVertUVBox(*PatchMeshes.back());
 //            std::cout<<"UV Box Dim Y:"<<uv_box.DimY()<<std::endl;

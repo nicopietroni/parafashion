@@ -87,7 +87,7 @@ public:
 
         static ScalarType & MinQ()
         {
-            static ScalarType MinV=0.05;
+            static ScalarType MinV=-0.05;
             return MinV;
         }
 
@@ -101,15 +101,20 @@ public:
 
         ScalarType operator()(MeshType &m) const
         {
-            vcg::tri::OptimizeUV_ARAP(m,5,0,true);
+            //vcg::tri::OptimizeUV_ARAP(m,5,0,true);
+            vcg::tri::InitializeArapWithLSCM(m,0);
             //evaluate the distortion
             vcg::tri::Distortion<TraceMesh,false>::SetQasDistorsion(m,vcg::tri::Distortion<TraceMesh,false>::EdgeComprStretch);
             ScalarType A=0;
+            //ScalarType SumA=0;
             for (size_t i=0;i<m.face.size();i++)
             {
-                if (m.face[i].Q()<MinQ())A+=vcg::DoubleArea(m.face[i]);
+//                SumA+=vcg::DoubleArea(m.face[i]);
+//                A+=m.face[i].Q()*vcg::DoubleArea(m.face[i]);
+                if (m.face[i].Q()<(MinQ()))A+=vcg::DoubleArea(m.face[i]);
                 if (m.face[i].Q()>MaxQ())A+=vcg::DoubleArea(m.face[i]);
             }
+            //return (A/SumA);
             return A;
         }
     };
@@ -222,7 +227,6 @@ public:
 
 
         PTracerType PTr(VGraph);
-        PTr.InitTracer(100,DebugMSG);
 
         PTr.MaxVal=max_corners;
         PatchGeneralParameters::MaxAdmittable()=max_corners;
@@ -233,6 +237,13 @@ public:
         PTr.CClarkability=-1;
         half_def_mesh.UpdateAttributes();
         bool PreRemoveStep=true;
+
+        if (max_compression<max_tension)
+        {
+            MeshArapQuality<TriMeshType>::MaxQ()=max_tension;
+            MeshArapQuality<TriMeshType>::MinQ()=max_compression;
+            PTr.check_quality_functor=check_stress;
+        }
 
         if (PMode==PMMinTJuncions)
         {
@@ -250,15 +261,17 @@ public:
             PTr.split_on_removal=true;
         }
 
-        if (max_compression<max_tension)
-        {
-            MeshArapQuality<TriMeshType>::MaxQ()=max_tension;
-            MeshArapQuality<TriMeshType>::MinQ()=max_compression;
-            PTr.check_quality_functor=check_stress;
-        }
+
+        PTr.InitTracer(100,DebugMSG);
+
 
         if ((!use_darts)&&(!allow_self_glue))
             RecursiveProcess<PTracerType>(PTr,100,true,true,PreRemoveStep,false,false,false,DebugMSG);
+
+//        {
+//            std::cout<<"DEDEDE"<<std::endl;
+//            RecursiveProcess<PTracerType>(PTr,100,false,false,false,false,false,false,DebugMSG);
+//        }
 
         if ((use_darts)&&(!allow_self_glue))
             RecursiveProcessWithDarts<PTracerType>(PTr,100,true,true,PreRemoveStep,false,false,false,DebugMSG);
@@ -296,8 +309,6 @@ public:
         PTr.GetVisualCornersPos(PatchCornerPos);
 
     }
-
-
 
     void  ComputeField(bool SaveStep=true)
     {
@@ -436,9 +447,12 @@ public:
                 EdgeS.insert(Key);
             }
 
+//        //initialize the tracer
+//        PTracerType PTr(VGraph);
+//        PTr.InitTracer(100,false);
+
         //initialize the tracer
         PTracerType PTr(VGraph);
-        PTr.InitTracer(100,false);
 
         PTr.CClarkability=-1;
         PTr.match_valence=false;
@@ -453,13 +467,15 @@ public:
         PTr.AllowDarts=use_darts;
         PTr.AllowSelfGluedPatch=allow_self_glue;
 
+
         if (max_compression<max_tension)
         {
-            //std::cout<<"AA"<<std::endl;
             MeshArapQuality<TriMeshType>::MaxQ()=max_tension;
             MeshArapQuality<TriMeshType>::MinQ()=max_compression;
             PTr.check_quality_functor=check_stress;
         }
+
+        PTr.InitTracer(100,false);
 
         //then restore the selected
         for (size_t i=0;i<deformed_mesh.face.size();i++)
@@ -530,11 +546,11 @@ public:
     {
         PMode=PMMinTJuncions;
         match_valence=false;
-        check_stress=false;
+        check_stress=true;
         param_boundary=0.03;
         max_corners=6;
-        max_compression=-0.05;
-        max_tension=0.05;
+        max_compression=-0.1;
+        max_tension=0.1;
         use_darts=true;
         allow_self_glue=true;
         remove_along_symmetry=false;
