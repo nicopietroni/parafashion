@@ -73,6 +73,7 @@ HEADERS += include/symmetrizer.h \
     include/trace_path_ui.h \
     include/myglwidget.h \
     include/parafashion.h \
+    include/smooth_field_directional.h \
     $$LIBIGLPATH/include/igl/principal_curvature.h \
     $$LIBIGLPATH/include/igl/copyleft/comiso/nrosy.h \
     $$VCGLIBPATH/wrap/qt/Outline2ToQImage.h \
@@ -95,6 +96,7 @@ win32{ # Awful problem with windows..
 #LIBS += -lGLU
 INCLUDEPATH += ./include/
 INCLUDEPATH += $$GLEWPATH/include
+INCLUDEPATH += $$DIRECTIONALPATH
 SOURCES += $$GLEWPATH/src/glew.c
 
 # Mac specific Config required to avoid to make application bundles

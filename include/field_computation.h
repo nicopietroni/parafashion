@@ -8,7 +8,6 @@
 #include <wrap/io_trimesh/import.h>
 #include <wrap/io_trimesh/export.h>
 //#include <wrap/gl/trimesh.h>
-#include <wrap/igl/smooth_field.h>
 #include <wrap/io_trimesh/export_field.h>
 #include <iostream>
 #include <fstream>

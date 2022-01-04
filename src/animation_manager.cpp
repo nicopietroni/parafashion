@@ -1,13 +1,12 @@
-
 #include "animation_manager.h"
-
+#include "smooth_field_directional.h"
+//#include <mesh_type.h>
 #include <tracing/mesh_type.h>
-#include <wrap/igl/smooth_field.h>
 
 template <class FaceType>
 void Jacobian<FaceType>::FromUV( CoordType p0,CoordType p1,CoordType p2,
-                    Point2X u0,Point2X u1,Point2X u2,
-                    CoordType &u,CoordType &v)
+                                 Point2X u0,Point2X u1,Point2X u2,
+                                 CoordType &u,CoordType &v)
 {
     p1-=p0;
     p2-=p0;
@@ -26,8 +25,8 @@ void Jacobian<FaceType>::FromUV( CoordType p0,CoordType p1,CoordType p2,
 
 template <class FaceType>
 void Jacobian<FaceType>::From3DTris(CoordType p0,CoordType p1,CoordType p2,
-                        CoordType p0_def,CoordType p1_def,CoordType p2_def,
-                        CoordType &u,CoordType &v)
+                                    CoordType p0_def,CoordType p1_def,CoordType p2_def,
+                                    CoordType &u,CoordType &v)
 {
     //retrieve UV Coords
     CoordType bary=(p0_def + p1_def + p2_def)/3;
@@ -76,8 +75,8 @@ void Jacobian<FaceType>::FromFace(const FaceType &F,CoordType &u,CoordType &v)
 
 template <class TriMeshType>
 void AnimationManager<TriMeshType>::InterpolateFaceField(const size_t &IndexFace,const size_t &IndexFrame,
-                            CoordType &InterpCurvDirection,
-                            ScalarType &InterpAnisotropyVal)
+                                                         CoordType &InterpCurvDirection,
+                                                         ScalarType &InterpAnisotropyVal)
 {
     assert(IndexFace<target_shape.face.size());
     assert(IndexFrame<NumFrames());
@@ -93,7 +92,7 @@ void AnimationManager<TriMeshType>::InterpolateFaceField(const size_t &IndexFace
 
 template <class TriMeshType>
 void AnimationManager<TriMeshType>::InterpolateFaceStretch(const size_t &IndexFace,const size_t &IndexFrame,
-                            CoordType &FaceJU,CoordType &FaceJV)
+                                                           CoordType &FaceJU,CoordType &FaceJV)
 {
     assert(IndexFrame<NumFrames());
     assert(IndexFrame<JU.size());
@@ -151,9 +150,11 @@ void AnimationManager<TriMeshType>::InitPerFrameCurvature()
     if (NumFrames()==0)return;
     PerFrameCurvVect.clear();
     PerFrameCurvAnis.clear();
+    PerFrameNormVect.clear();
 
     PerFrameCurvVect.resize(NumFrames());
     PerFrameCurvAnis.resize(NumFrames());
+    PerFrameNormVect.resize(NumFrames());
 
     std::vector<ScalarType> AnisValue;
 
@@ -162,11 +163,13 @@ void AnimationManager<TriMeshType>::InitPerFrameCurvature()
     for (size_t i=0;i<NumFrames();i++)
     {
         UpdateTemplateToFrame(i);
-        vcg::tri::FieldSmoother<TriMeshType>::InitByCurvature(animated_template_shape,4);
+        DirectionalFieldSmoother<TriMeshType>::InitByCurvature(animated_template_shape,4);
         for (size_t j=0;j<animated_template_shape.face.size();j++)
         {
             PerFrameCurvVect[i].push_back(animated_template_shape.face[j].PD1());
             PerFrameCurvAnis[i].push_back(animated_template_shape.face[j].Q());
+            PerFrameNormVect[i].push_back(animated_template_shape.face[j].N());
+
             AnisValue.push_back(animated_template_shape.face[j].Q());
         }
     }
@@ -176,11 +179,11 @@ void AnimationManager<TriMeshType>::InitPerFrameCurvature()
     //then get the percentile of anisotropy
     std::sort(AnisValue.begin(),AnisValue.end());
     size_t Index_Percentile=(AnisValue.size()*(1-ANISOTR_PERCENTILE));
-//        std::cout<<"Index:"<<Index_Percentile<<std::endl;
-//        std::cout<<"Size:"<<AnisValue.size()<<std::endl;
+    //        std::cout<<"Index:"<<Index_Percentile<<std::endl;
+    //        std::cout<<"Size:"<<AnisValue.size()<<std::endl;
 
     percentileAnis=AnisValue[Index_Percentile];
-//       std::cout<<"Value:"<<percentileAnis<<std::endl;
+    //       std::cout<<"Value:"<<percentileAnis<<std::endl;
 }
 
 
@@ -272,7 +275,7 @@ void AnimationManager<TriMeshType>::ClampStretchByPercentile()
         target_shape.face[i].K2()=std::max(target_shape.face[i].K2(),-percentileStretchCompress);
         target_shape.face[i].K2()=std::min(target_shape.face[i].K2(),percentileStretchCompress);
         target_shape.face[i].Q()=std::max(fabs(target_shape.face[i].K1()),
-                                            fabs(target_shape.face[i].K2()));
+                                          fabs(target_shape.face[i].K2()));
     }
 }
 
@@ -303,8 +306,8 @@ void AnimationManager<TriMeshType>::UpdateFaceStretchField(size_t IndexFrame)
 {
     assert(IndexFrame<NumFrames());
 
-//        ScalarType minV=std::numeric_limits<ScalarType>::max();
-//        ScalarType maxV=std::numeric_limits<ScalarType>::min();
+    //        ScalarType minV=std::numeric_limits<ScalarType>::max();
+    //        ScalarType maxV=std::numeric_limits<ScalarType>::min();
 
     for (size_t i=0;i<target_shape.face.size();i++)
     {
@@ -402,7 +405,7 @@ void AnimationManager<TriMeshType>::UpdateProjectionBasis()
         ScalarType MinD;
         CoordType closestPt,normI,baryP;
         FaceType *f=vcg::tri::GetClosestFaceBase(animated_template_shape,Grid,target_shape.vert[i].P(),
-                                                    MaxD,MinD,closestPt,normI,baryP);
+                                                 MaxD,MinD,closestPt,normI,baryP);
         assert(f!=NULL);
         size_t IndexF=vcg::tri::Index(animated_template_shape,f);
 
@@ -414,12 +417,12 @@ void AnimationManager<TriMeshType>::UpdateProjectionBasis()
     for (size_t i=0;i<target_shape.face.size();i++)
     {
         CoordType BaryF=(target_shape.face[i].P(0)+
-                        target_shape.face[i].P(1)+
-                        target_shape.face[i].P(2))/3;
+                         target_shape.face[i].P(1)+
+                         target_shape.face[i].P(2))/3;
         ScalarType MinD;
         CoordType closestPt,normI,baryP;
         FaceType *f=vcg::tri::GetClosestFaceBase(animated_template_shape,Grid,BaryF,
-                                                    MaxD,MinD,closestPt,normI,baryP);
+                                                 MaxD,MinD,closestPt,normI,baryP);
         assert(f!=NULL);
         size_t IndexF=vcg::tri::Index(animated_template_shape,f);
 
@@ -447,8 +450,8 @@ size_t AnimationManager<TriMeshType>::NumFrames()const
 
 template <class TriMeshType>
 void AnimationManager<TriMeshType>::UpdateToFrame(size_t IndexFrame,
-                    bool UpdateCurvature,
-                    bool UpdateStretch)
+                                                  bool UpdateCurvature,
+                                                  bool UpdateStretch)
 {
     assert(IndexFrame<PerFramePos.size());
     assert(PerFramePos[IndexFrame].size()==animated_template_shape.vert.size());
@@ -474,9 +477,140 @@ void AnimationManager<TriMeshType>::UpdateToFrame(size_t IndexFrame,
 
 
 template <class TriMeshType>
+void AnimationManager<TriMeshType>::InitTargetDirectionsMax()
+{
+    TargetVect.clear();
+    TargetAnis.clear();
+
+    assert(PerFrameCurvAnis.size()>0);
+    assert(PerFrameCurvAnis.size()==PerFrameCurvVect.size());
+    assert(PerFrameCurvAnis.size()==PerFrameNormVect.size());
+
+    TargetVect.resize(target_shape.face.size(),CoordType(0,0,0));
+    TargetAnis.resize(target_shape.face.size(),0);
+
+    //for each frame
+    for (size_t i=0;i<PerFrameCurvAnis.size();i++)
+    {
+        assert(PerFrameCurvAnis[i].size()==target_shape.face.size());
+        for (size_t j=0;j<PerFrameCurvAnis[i].size();j++)
+        {
+            if (TargetAnis[j]>PerFrameCurvAnis[i][j])continue;
+            //assign the new one
+            TargetAnis[j]=PerFrameCurvAnis[i][j];
+            vcg::Matrix33<ScalarType> RotM=vcg::RotationMatrix(PerFrameNormVect[i][j],target_shape.face[j].N());
+            TargetVect[j]=RotM*PerFrameCurvVect[i][j];
+        }
+    }
+}
+
+template <class TriMeshType>
+void AnimationManager<TriMeshType>::NormalizeVect(std::vector<ScalarType>  &Values,
+                                                  ScalarType cut_perc)
+{
+    std::vector<ScalarType>  Test=Values;
+    std::sort(Test.begin(),Test.end());
+    size_t minI=Test.size()*cut_perc;
+    size_t maxI=Test.size()*(1-cut_perc);
+    ScalarType MinV= Test[minI];
+    ScalarType MaxV= Test[maxI];
+
+    for (size_t i=0;i<Values.size();i++)
+    {
+        //clamp
+        Values[i]=std::max(Values[i],MinV);
+        Values[i]=std::min(Values[i],MaxV);
+
+        //then normalize
+        Values[i]-=MinV;
+        Values[i]/=(MaxV-MinV);
+    }
+
+}
+
+template <class TriMeshType>
+void AnimationManager<TriMeshType>::InitTargetDirectionsAvg()
+{
+    TargetVect.clear();
+    TargetAnis.clear();
+
+    assert(PerFrameCurvAnis.size()>0);
+    assert(PerFrameCurvAnis.size()==PerFrameCurvVect.size());
+    assert(PerFrameCurvAnis.size()==PerFrameNormVect.size());
+
+    TargetVect.resize(target_shape.face.size(),CoordType(0,0,0));
+    TargetAnis.resize(target_shape.face.size(),0);
+
+    //per face curvature per frame
+    std::vector<std::vector<CoordType> > PerFaceFrameCurvVect;
+    std::vector<std::vector<CoordType> > PerFaceFrameNormVect;
+    std::vector<std::vector<ScalarType> > PerFaceFrameCurvAnis;
+    PerFaceFrameCurvVect.resize(target_shape.face.size());
+    PerFaceFrameCurvAnis.resize(target_shape.face.size());
+    PerFaceFrameNormVect.resize(target_shape.face.size());
+    for (size_t i=0;i<PerFrameCurvAnis.size();i++)
+    {
+        assert(PerFrameCurvAnis[i].size()==target_shape.face.size());
+        for (size_t j=0;j<PerFrameCurvAnis[i].size();j++)
+        {
+            vcg::Matrix33<ScalarType> RotM=vcg::RotationMatrix(PerFrameNormVect[i][j],target_shape.face[j].N());
+            CoordType TargetVect=RotM*PerFrameCurvVect[i][j];
+
+            PerFaceFrameCurvAnis[j].push_back(PerFrameCurvAnis[i][j]);
+            PerFaceFrameCurvVect[j].push_back(TargetVect);
+            PerFaceFrameNormVect[j].push_back(PerFrameNormVect[i][j]);
+        }
+    }
+
+
+    for (size_t i=0;i<target_shape.face.size();i++)
+    {
+        TargetVect[i]=vcg::tri::CrossField<TriMeshType>::InterpolateCrossField(PerFaceFrameCurvVect[i],
+                                                                               PerFaceFrameCurvAnis[i],
+                                                                               PerFaceFrameNormVect[i],
+                                                                               target_shape.face[i].N());
+        TargetAnis[i]=0;
+        for (size_t j=0;j<PerFaceFrameCurvAnis[i].size();j++)
+          TargetAnis[i]+=PerFaceFrameCurvAnis[i][j];
+
+        TargetAnis[i]/=PerFaceFrameCurvAnis[i].size();
+    }
+    //std::cout<<"2"<<std::endl;
+    //            TargetAnis[j]=PerFrameCurvAnis[i][j];
+    //            if (TargetAnis[j]>PerFrameCurvAnis[i][j])continue;
+    //            //assign the new one
+
+    //            vcg::Matrix33<ScalarType> RotM=vcg::RotationMatrix(PerFrameNormVect[i][j],target_shape.face[j].N());
+    //            TargetVect[j]=RotM*PerFrameCurvVect[i][j];
+    //        }
+    //    }
+}
+
+template <class TriMeshType>
+void AnimationManager<TriMeshType>::InitTargetDirectionsOnMesh()
+{
+    //InitTargetDirections();
+    InitTargetDirectionsAvg();
+    //InitTargetDirectionsMax();
+
+    NormalizeVect(TargetAnis);
+
+    assert(TargetVect.size()==target_shape.face.size());
+    assert(TargetAnis.size()==target_shape.face.size());
+    for (size_t i=0;i<TargetAnis.size();i++)
+    {
+        target_shape.face[i].Q()=TargetAnis[i];
+        target_shape.face[i].PD1()=TargetVect[i];
+        target_shape.face[i].PD2()=target_shape.face[i].PD1()^target_shape.face[i].N();
+        target_shape.face[i].PD1().Normalize();
+        target_shape.face[i].PD2().Normalize();
+    }
+}
+
+template <class TriMeshType>
 AnimationManager<TriMeshType>::AnimationManager(TriMeshType &_target_shape):target_shape(_target_shape)
 {}
 
-//Manual instantiation:
+////Manual instantiation:
 template class Jacobian<TraceFace>;
 template class AnimationManager<TraceMesh>;

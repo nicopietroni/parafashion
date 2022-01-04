@@ -58,6 +58,9 @@ class AnimationManager
     //copy of the mesh to reproject on
     TriMeshType animated_template_shape;
 
+    //per frame normal
+    std::vector<std::vector<CoordType> > PerFrameNormVect;
+
     //per frame curvature
     std::vector<std::vector<CoordType> > PerFrameCurvVect;
 
@@ -66,6 +69,10 @@ class AnimationManager
 
     //per frame Jacobian first and Second Direction
     std::vector<std::vector<CoordType> > JU,JV;
+
+    //target curvature and weight
+    std::vector<CoordType> TargetVect;
+    std::vector<ScalarType> TargetAnis;
 
     void InterpolateFaceField(const size_t &IndexFace,const size_t &IndexFrame,
                               CoordType &InterpCurvDirection,
@@ -95,7 +102,6 @@ class AnimationManager
 
     void UpdateFaceCurvatureField(size_t IndexFrame);
 
-
     void UpdateFaceStretchField(size_t IndexFrame);
 
 public:
@@ -119,6 +125,15 @@ public:
     void UpdateToFrame(size_t IndexFrame,
                        bool UpdateCurvature=false,
                        bool UpdateStretch=false);
+
+    void InitTargetDirectionsAvg();
+
+    void InitTargetDirectionsMax();
+
+    void NormalizeVect(std::vector<ScalarType>  &Values,
+                       ScalarType cut_perc=0.1);
+
+    void InitTargetDirectionsOnMesh();
 
     AnimationManager(TriMeshType &_target_shape);
 };

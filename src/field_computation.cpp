@@ -1,7 +1,6 @@
 #include "field_computation.h"
-
+#include "smooth_field_directional.h"
 #include <wrap/io_trimesh/export_field.h>
-#include <wrap/igl/smooth_field.h>
 #include <tracing/mesh_type.h>
 
 template <class TriMeshType>
@@ -10,19 +9,20 @@ void FieldComputation<TriMeshType>::ComputeField(TriMeshType &mesh,
                              ScalarType CurvatureFidelity,
                              bool DebugMsg)
 {
-    typedef vcg::tri::FieldSmoother<TriMeshType> FieldSmootherType;
+    //typedef vcg::tri::FieldSmoother<TriMeshType> FieldSmootherType;
+    typedef DirectionalFieldSmoother<TriMeshType> FieldSmootherType;
     typename FieldSmootherType::SmoothParam Param;
     Param.align_borders=true;
-    if (FMode==FMBoundary)
-    {
-        //Param.alpha_curv=CurvatureFidelity;
-        Param.SmoothM=vcg::tri::SMNPoly;
-    }
-    else
-    {
-        Param.alpha_curv=CurvatureFidelity;
-        Param.SmoothM=vcg::tri::SMMiq;
-    }
+//    if (FMode==FMBoundary)
+//    {
+//        //Param.alpha_curv=CurvatureFidelity;
+//        Param.SmoothM=vcg::tri::SMNPoly;
+//    }
+//    else
+//    {
+//        Param.alpha_curv=CurvatureFidelity;
+//        Param.SmoothM=vcg::tri::SMMiq;
+//    }
 
     //add features
     size_t NumFeatures=0;
