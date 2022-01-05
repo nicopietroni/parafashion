@@ -115,7 +115,7 @@ bool HasTxt=false;
 
 PathGL<TraceMesh> GPath;
 
-#define MAX_DIST 0.05
+//#define MAX_DIST 0.05
 
 Parafashion<TraceMesh> PFashion(deformed_mesh,reference_mesh);
 AnimationManager<TraceMesh> AManager(deformed_mesh);
@@ -126,6 +126,8 @@ QImage SVGTxt;
 GLuint layoutTxtIdx=0;
 bool HasLayoutTxt=false;
 bool has_to_update_layout=false;
+
+#define COLOR_LIMITS 1.2
 
 void GLDrawPoints(const std::vector<CoordType> &DrawPos,
                   const ScalarType &GLSize,const vcg::Color4b &Col)
@@ -267,6 +269,10 @@ void GLDrawPatchEdges(vcg::Color4b col=vcg::Color4b(0,0,255,255),
 
 void MyGLWidget::GLDrawLegenda()
 {
+    vcg::Color4b col0=vcg::Color4b::ColorRamp(-COLOR_LIMITS,COLOR_LIMITS,-1);
+    vcg::Color4b colM=vcg::Color4b::ColorRamp(-COLOR_LIMITS,COLOR_LIMITS,0);
+    vcg::Color4b col1=vcg::Color4b::ColorRamp(-COLOR_LIMITS,COLOR_LIMITS,1);
+
     ScalarType sizeX=0.5;
     ScalarType sizeY=0.05;
     glPushMatrix();
@@ -277,20 +283,26 @@ void MyGLWidget::GLDrawLegenda()
     //renderText(floor(-2*sizeX), floor(-2*sizeY), "<5% Compression", QFont("Arial", 16, QFont::Bold,false) );
 
     glBegin(GL_QUADS);
-    glColor(vcg::Color4b(0,0,255,255));
+    //glColor(vcg::Color4b(0,0,255,255));
+    glColor(col1);
     glVertex(CoordType(-sizeX,-sizeY,0));
-    glColor(vcg::Color4b(0,255,0,255));
+    //glColor(vcg::Color4b(0,255,0,255));
+    glColor(colM);
     glVertex(CoordType(0,-sizeY,0));
     glVertex(CoordType(0,sizeY,0));
-    glColor(vcg::Color4b(0,0,255,255));
+    //glColor(vcg::Color4b(0,0,255,255));
+    glColor(col1);
     glVertex(CoordType(-sizeX,sizeY,0));
 
-    glColor(vcg::Color4b(0,255,0,255));
+    //glColor(vcg::Color4b(0,255,0,255));
+    glColor(colM);
     glVertex(CoordType(0,-sizeY,0));
-    glColor(vcg::Color4b(255,0,0,255));
+    //glColor(vcg::Color4b(255,0,0,255));
+    glColor(col0);
     glVertex(CoordType(sizeX,-sizeY,0));
     glVertex(CoordType(sizeX,sizeY,0));
-    glColor(vcg::Color4b(0,255,0,255));
+    //glColor(vcg::Color4b(0,255,0,255));
+    glColor(colM);
     glVertex(CoordType(0,sizeY,0));
     glEnd();
 
@@ -299,15 +311,19 @@ void MyGLWidget::GLDrawLegenda()
 
     vcg::glColor(vcg::Color4b(0,0,0,255));
 
+    std::string ComprString=std::to_string(((int)fabs(PFashion.max_compression*100)));
+    ComprString+="% Compression";
     int Width=width();
     int Height=height();
     double posX=(double)Width*0.25;
     double posY=(double)Height*0.9;
-    renderText(floor(posX), floor(posY), " 5% Compression", QFont("Arial", 16, QFont::Bold,false) );
+    renderText(floor(posX), floor(posY), ComprString.c_str(), QFont("Arial", 16, QFont::Bold,false) );
 
+    std::string TensionString=std::to_string(((int)fabs(PFashion.max_compression*100)));
+    TensionString+="% Tension";
     posX=(double)Width*0.65;
     posY=(double)Height*0.9;
-    renderText(floor(posX), floor(posY), " 5% Tension", QFont("Arial", 16, QFont::Bold,false) );
+    renderText(floor(posX), floor(posY), TensionString.c_str(), QFont("Arial", 16, QFont::Bold,false) );
 }
 
 void DoColorByDistortion()
@@ -323,19 +339,36 @@ void DoColorByDistortion()
     //copy per vertex
     vcg::tri::UpdateQuality<TraceMesh>::VertexFromFace(deformed_mesh);
 
-    //clamp
-    for (size_t i=0;i<deformed_mesh.vert.size();i++)
-    {
-        deformed_mesh.vert[i].Q()=std::min(deformed_mesh.vert[i].Q(),MAX_DIST);
-        deformed_mesh.vert[i].Q()=std::max(deformed_mesh.vert[i].Q(),-MAX_DIST);
-    }
+    //    //clamp
+    //    for (size_t i=0;i<deformed_mesh.vert.size();i++)
+    //    {
+    //        deformed_mesh.vert[i].Q()=std::min(deformed_mesh.vert[i].Q(),PFashion.max_tension);
+    //        deformed_mesh.vert[i].Q()=std::max(deformed_mesh.vert[i].Q(),PFashion.max_);
+    //    }
 
     colored_distortion=true;
 
-    vcg::tri::UpdateColor<TraceMesh>::PerVertexQualityRamp(deformed_mesh,MAX_DIST,-MAX_DIST);
+    for (size_t i=0;i<deformed_mesh.vert.size();i++)
+    {
+        ScalarType Val=deformed_mesh.vert[i].Q();
+        if (deformed_mesh.vert[i].Q()<=PFashion.max_compression)
+        {
+            deformed_mesh.vert[i].C()=vcg::Color4b::Blue;
+            continue;
+        }
+        if (deformed_mesh.vert[i].Q()>=PFashion.max_tension)
+        {
+            deformed_mesh.vert[i].C()=vcg::Color4b::Red;
+            continue;
+        }
+        deformed_mesh.vert[i].C()=vcg::Color4b::ColorRamp(PFashion.max_compression*COLOR_LIMITS,
+                                                         PFashion.max_tension*COLOR_LIMITS,
+                                                         Val);
+    }
+
+    //vcg::tri::UpdateColor<TraceMesh>::PerVertexQualityRamp(deformed_mesh,MAX_DIST,-MAX_DIST);
 
     //cut everything bigger than a threshold
-
     for (size_t i=0;i<deformed_mesh.face.size();i++)
     {
         deformed_mesh.face[i].Q()=FaceQ[i];
@@ -472,22 +505,22 @@ void TW_CALL SaveData(void *)
         fprintf(F,"%d\n",(int)deformed_mesh.face[i].Q());
     fclose(F);
 
-//    //SAVE THE SVG
-//    std::string pathPatch=ProjM;
-//    pathPatch=ProjM+"_patch.svg";
-//    std::string pathPatchPNG=ProjM;
-//    pathPatchPNG=ProjM+"_patch.png";
-//    float scale=1000;
-//    SvgExporter<TraceMesh>::ExportUVPolyline(deformed_mesh,
-//                                             pathPatch.c_str(),
-//                                             pathPatchPNG.c_str(),
-//                                             SVGTxt,
-//                                             scale,4,
-//                                             PFashion.param_boundary*scale,
-//                                             PFashion.param_boundary*scale*0.75);
-//    //prepare the texure
-//    HasLayoutTxt=true;
-//    has_to_update_layout=true;
+    //    //SAVE THE SVG
+    //    std::string pathPatch=ProjM;
+    //    pathPatch=ProjM+"_patch.svg";
+    //    std::string pathPatchPNG=ProjM;
+    //    pathPatchPNG=ProjM+"_patch.png";
+    //    float scale=1000;
+    //    SvgExporter<TraceMesh>::ExportUVPolyline(deformed_mesh,
+    //                                             pathPatch.c_str(),
+    //                                             pathPatchPNG.c_str(),
+    //                                             SVGTxt,
+    //                                             scale,4,
+    //                                             PFashion.param_boundary*scale,
+    //                                             PFashion.param_boundary*scale*0.75);
+    //    //prepare the texure
+    //    HasLayoutTxt=true;
+    //    has_to_update_layout=true;
 
     DoGenerateSVG(ProjM);
 
@@ -868,14 +901,14 @@ static void GLDrawSVGLayout(size_t sizeU,
     }
     vcg::glColor(vcg::Color4b(255,255,255,255));
     glBegin(GL_QUADS);
-        vcg::glTexCoord(vcg::Point2<ScalarType>(0,0));
-        vcg::glVertex(CoordType(0,0,0));
-        vcg::glTexCoord(vcg::Point2<ScalarType>(1,0));
-        vcg::glVertex(CoordType(DimX,0,0));
-        vcg::glTexCoord(vcg::Point2<ScalarType>(1,1));
-        vcg::glVertex(CoordType(DimX,DimY,0));
-        vcg::glTexCoord(vcg::Point2<ScalarType>(0,1));
-        vcg::glVertex(CoordType(0,DimY,0));
+    vcg::glTexCoord(vcg::Point2<ScalarType>(0,0));
+    vcg::glVertex(CoordType(0,0,0));
+    vcg::glTexCoord(vcg::Point2<ScalarType>(1,0));
+    vcg::glVertex(CoordType(DimX,0,0));
+    vcg::glTexCoord(vcg::Point2<ScalarType>(1,1));
+    vcg::glVertex(CoordType(DimX,DimY,0));
+    vcg::glTexCoord(vcg::Point2<ScalarType>(0,1));
+    vcg::glVertex(CoordType(0,DimY,0));
     glEnd();
 
     glPopMatrix();
@@ -886,22 +919,22 @@ void MyGLWidget::paintGL ()
 {
     if (has_to_update_layout)
     {
-            glGenTextures( 1, & layoutTxtIdx );
-            glEnable(GL_TEXTURE_2D);
-            glBindTexture( GL_TEXTURE_2D, layoutTxtIdx );
-            glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
-            glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
-            glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT );
-            glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT );
-            glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
-            //load texture at level i
-            //txt_image.
+        glGenTextures( 1, & layoutTxtIdx );
+        glEnable(GL_TEXTURE_2D);
+        glBindTexture( GL_TEXTURE_2D, layoutTxtIdx );
+        glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
+        glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
+        glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT );
+        glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT );
+        glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+        //load texture at level i
+        //txt_image.
 
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, SVGTxt.width(), SVGTxt.height(), 0, GL_BGRA_EXT, GL_UNSIGNED_BYTE, SVGTxt.constBits());
-            glDisable(GL_TEXTURE_2D);
-            glBindTexture( GL_TEXTURE_2D, 0 );
-            has_to_update_layout=false;
-            //std::cout<<"LOADED TXT"<<std::endl;
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, SVGTxt.width(), SVGTxt.height(), 0, GL_BGRA_EXT, GL_UNSIGNED_BYTE, SVGTxt.constBits());
+        glDisable(GL_TEXTURE_2D);
+        glBindTexture( GL_TEXTURE_2D, 0 );
+        has_to_update_layout=false;
+        //std::cout<<"LOADED TXT"<<std::endl;
     }
 
     if (do_rotate)
