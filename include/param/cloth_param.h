@@ -1,9 +1,11 @@
 #pragma once
 
 #include <Eigen/Core>
+#include <igl/boundary_loop.h>
 
 #include "param/bary_optimizer.h"
 #include "param/param_utils.h"
+#include "param/auto_select.h"
 
 class ClothParam {
 public:
@@ -13,6 +15,15 @@ public:
         V_2d_ = paramARAP(V_3d_, F_);
         bo_.allocateMemory(F.rows(), V_3d.rows());
         bo_.measureScore(V_2d_, V_3d_, F_, stretch_u_, stretch_v_);
+
+        igl::boundary_loop(F, bnd_);
+        std::vector<int> selec = autoSelect(V_3d, bnd_);
+        bo_.setSelectedVertices(selec);
+
+        Eigen::RowVector3d from = V_2d_.row(selec[0]) - V_2d_.row(selec[1]);
+        Eigen::RowVector3d to(1.0, 0, 0);  
+        Eigen::Matrix3d R = computeRotation(from, to);
+        V_2d_ = (R * V_2d_.transpose()).transpose();
     };
 
     bool paramAttempt(int max_iter = 10){
@@ -41,6 +52,7 @@ private:
     const Eigen::MatrixXi F_;
     const double max_stretch_;
 
+    Eigen::VectorXi bnd_;
     Eigen::MatrixXd V_2d_;
     BaryOptimizer bo_;
 

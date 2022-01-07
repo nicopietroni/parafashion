@@ -1,5 +1,6 @@
 #pragma once
 #include <Eigen/Core>
+#include <iostream>
 
 /* FROM 2 TO 1 
 line3 = line2t.colwise() - T_est;
@@ -34,3 +35,6 @@ Eigen::Vector3d barycentricCoords(const Eigen::RowVector3d& p, const Eigen::RowV
                                          const Eigen::RowVector3d& b, const Eigen::RowVector3d& c);
 
 Eigen::MatrixXd paramARAP(const Eigen::MatrixXd& V_3d, const Eigen::MatrixXi& F);
+
+Eigen::Matrix3d computeRotation(const Eigen::RowVector3d& from,
+                                const Eigen::RowVector3d& to);

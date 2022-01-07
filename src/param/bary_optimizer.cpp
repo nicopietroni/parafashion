@@ -6,8 +6,8 @@
 #include <Eigen/IterativeLinearSolvers> // https://forum.kde.org/viewtopic.php?f=74&t=125165
 
 #include "param/dart.h"
-#include "param/param_utils.h"
 
+#include "param/param_utils.h"
 //#define LOCALGLOBAL_DEBUG
 //#define LOCALGLOBAL_TIMING
 //#define LOCALGLOBAL_DEBUG_SMALL // print full matrices, should be small
