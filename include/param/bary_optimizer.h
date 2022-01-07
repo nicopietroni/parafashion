@@ -19,8 +19,11 @@ typedef Eigen::DiagonalMatrix<double, Eigen::Dynamic> DiagonalMatrixXd;
 
 class BaryOptimizer {
 public:
-    BaryOptimizer(int n_faces, int n_vs);
+    BaryOptimizer(){};
+    void allocateMemory(int n_faces, int n_vs);
 
+    Eigen::MatrixXd localGlobal(const Eigen::MatrixXd& V_2d, const Eigen::MatrixXd& V_3d, 
+                                const Eigen::MatrixXi& F, int max_iterations);
     Eigen::MatrixXd localGlobal(const Eigen::MatrixXd& V_2d, const Eigen::MatrixXd& V_3d, 
                                 const Eigen::MatrixXi& F);
 
@@ -54,6 +57,8 @@ public:
     // ------------- CONFIG end        ------------- // 
 
     void setSelectedVertices(std::vector<int> selected_vs) {selected_vs_ = selected_vs;};
+    std::vector<int> getSelectedVertices() const {return selected_vs_;}
+
     void setDarts(std::vector<SimpleDart> simple_darts);
     void setDarts(std::vector<std::vector<int>> ordered_cuts);
 

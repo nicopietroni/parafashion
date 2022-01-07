@@ -21,7 +21,7 @@ using std::chrono::microseconds;
 
 #define USE_WEIGTHS_IN_LINEAR_SYSTEM true
 
-BaryOptimizer::BaryOptimizer(int n_faces, int n_vs){
+void BaryOptimizer::allocateMemory(int n_faces, int n_vs){
     // Sparse conventions:
     // we have n target equations
     // and vector x of V 2D vertices
@@ -615,6 +615,11 @@ void BaryOptimizer::measureScore(const Eigen::MatrixXd& V_2d, const Eigen::Matri
     std::cout << "Stretch V:\t" << stretch_v_score << std::endl;
     std::cout << "Edges sc.:\t" << edges_score << std::endl;
     std::cout << "Selec sc.:\t" << selected_score << std::endl;*/
+
+
+    // From centered around 1 to centered around 0:
+    stretch_u_vec = stretch_u_vec.array() - 1.0;
+    stretch_v_vec = stretch_v_vec.array() - 1.0;
 }
 
 void BaryOptimizer::setDarts(std::vector<SimpleDart> simple_darts) {
