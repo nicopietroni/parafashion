@@ -7,6 +7,9 @@
 #include <vcg/space/outline2_packer.h>
 #include <vcg/complex/algorithms/parametrization/uv_utils.h>
 #include <tracing/patch_manager.h>
+#include <vcg/complex/algorithms/mesh_to_matrix.h>
+#include <param/cloth_param.h>
+
 //enum ParamType{Arap,LSQMap};
 
 //template <class TriMeshType>
@@ -17,6 +20,30 @@
 //    else
 //        vcg::tri::OptimizeUV_LSCM(mesh,TriMeshType::VertexType::SELECTED);
 //}
+
+template <class TriMeshType>
+void ClothParametrize(TriMeshType &mesh,typename TriMeshType::ScalarType error=0.05)
+{
+    Eigen::MatrixXd V;
+    Eigen::MatrixXi F;
+
+    vcg::tri::MeshToMatrix<TriMeshType>::GetTriMeshData(mesh, F, V);
+
+    ClothParam cloth(V, F, error);
+    bool success = cloth.paramAttempt();
+
+    std::cout << "Success: " << success << std::endl;
+    cloth.printStretchStats();
+    Eigen::MatrixXd V_uv;
+    V_uv = cloth.getV2d();
+
+    for (int i=0; i<(int)mesh.vert.size(); i++)
+    {
+        mesh.vert[i].T().P()[0] = V_uv(i,0);
+        mesh.vert[i].T().P()[1] = V_uv(i,1);
+    }
+
+}
 
 template <class TriMeshType>
 class Parametrizer
@@ -52,8 +79,9 @@ public:
             PatchMeshes.push_back(new TriMeshType);
             PatchManager<TriMeshType>::GetMeshFromPatch(mesh,i,Partitions,(*PatchMeshes.back()),true);
             (*PatchMeshes.back()).UpdateAttributes();
-            vcg::tri::InitializeArapWithLSCM((*PatchMeshes.back()),0);
+            //vcg::tri::InitializeArapWithLSCM((*PatchMeshes.back()),0);
             //vcg::tri::OptimizeUV_ARAP((*PatchMeshes.back()),100,0,true);
+            ClothParametrize<TriMeshType>((*PatchMeshes.back()),0.01);
 
 //            vcg::Box2<ScalarType> uv_box=vcg::tri::UV_Utils<TriMeshType>::PerVertUVBox(*PatchMeshes.back());
 //            std::cout<<"UV Box Dim Y:"<<uv_box.DimY()<<std::endl;
