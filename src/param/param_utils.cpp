@@ -6,6 +6,8 @@
 #include <iostream>
 #include <cmath>
 
+#include <igl/lscm.h>
+
 void procustes(const Eigen::MatrixXd& points1, // to
                const Eigen::MatrixXd& points2, // from
                Eigen::MatrixXd& R_est,
@@ -143,6 +145,23 @@ Eigen::MatrixXd paramARAP(const Eigen::MatrixXd& V_3d, const Eigen::MatrixXi& F)
     V_2db.col(1) = V_2d.col(1);
     
     return V_2db.array() * scale;
+}
+
+
+Eigen::MatrixXd paramLSCM(const Eigen::MatrixXd& V_3d, const Eigen::MatrixXi& F){
+    Eigen::VectorXi bnd, b(2,1);
+    igl::boundary_loop(F, bnd);
+    b(0) = bnd(0);
+    b(1) = bnd(bnd.size()/2);
+    Eigen::MatrixXd bc(2, 2);
+    bc<<0,0,1,0;
+
+    Eigen::MatrixXd V_2d;
+    igl::lscm(V_3d,F,b,bc,V_2d);
+    Eigen::MatrixXd V_2db = Eigen::MatrixXd::Zero(V_2d.rows(), 3);
+    V_2db.col(0) = V_2d.col(0);
+    V_2db.col(1) = V_2d.col(1);
+    return V_2db;
 }
 
 Eigen::Matrix3d computeRotation(const Eigen::RowVector3d& from,

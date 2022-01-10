@@ -12,7 +12,8 @@ public:
     ClothParam(const Eigen::MatrixXd& V_3d, const Eigen::MatrixXi& F,
                double max_stretch = 0.05)
                : F_(F), V_3d_(V_3d), max_stretch_(max_stretch){
-        V_2d_ = paramARAP(V_3d_, F_);
+        //V_2d_ = paramARAP(V_3d_, F_);
+        V_2d_ = paramLSCM(V_3d_, F_);
         bo_.allocateMemory(F.rows(), V_3d.rows());
         bo_.measureScore(V_2d_, V_3d_, F_, stretch_u_, stretch_v_);
 

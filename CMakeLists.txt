@@ -52,7 +52,9 @@ file(GLOB SRCFILES src/*.cpp
     lib/Clipper/clipper.cpp
 )
 
-add_executable(parafashion ${SRCFILES} apps/parafashion.cpp)
+file(GLOB SRCPARAM src/param/*.cpp)
+
+add_executable(parafashion ${SRCFILES} apps/parafashion.cpp ${SRCPARAM})
 target_link_libraries(parafashion ${COMMON_LIBRARIES})
 include_directories(include)
 

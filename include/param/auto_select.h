@@ -40,6 +40,6 @@ std::vector<int> autoSelect(const Eigen::MatrixXd& V_3d, const Eigen::VectorXi& 
         }
     } 
 
-    std::cout << best_pair[0] << " " << best_pair[1] << std::endl;
+    //std::cout << best_pair[0] << " " << best_pair[1] << std::endl;
     return best_pair;
 }
