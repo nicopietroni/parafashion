@@ -61,6 +61,8 @@ public:
 
     void setDarts(std::vector<SimpleDart> simple_darts);
     void setDarts(std::vector<std::vector<int>> ordered_cuts);
+    void setUnorderedDarts(const std::vector<std::vector<std::pair<int, int>>>& dart_duplicates,
+                           const std::vector<int>& dart_tips);
 
 private:
 
@@ -68,8 +70,9 @@ private:
     int n_equations_ = 0;
     int n_triplets_ = 0;
     std::vector<int> selected_vs_;
-    std::vector<SimpleDart> simple_darts_;
-
+    //std::vector<SimpleDart> simple_darts_;
+    std::vector<UnorderedDart> unordered_darts_;
+    
     Eigen::SparseMatrix<double> A;
     Eigen::VectorXd b;
     Eigen::VectorXd x;

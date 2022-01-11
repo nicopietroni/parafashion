@@ -8,6 +8,13 @@
 #include <tracing/mesh_type.h>
 #include "animation_manager.h"
 
+#define PRINT_PARAFASHION_TIMING 
+#ifdef PRINT_PARAFASHION_TIMING
+#include <chrono>
+using std::chrono::steady_clock;
+using std::chrono::duration_cast;
+using std::chrono::microseconds;
+#endif
 
 enum PatchMode{PMMinTJuncions,PMAvgTJuncions,PMAllTJuncions};
 
@@ -101,21 +108,35 @@ public:
 
         ScalarType operator()(MeshType &m) const
         {
+            #ifdef PRINT_PARAFASHION_TIMING
+            steady_clock::time_point pre_param = steady_clock::now();
+            #endif
+            bool success = ClothParametrize<TriMeshType>(m, MaxQ()); // quality-check param, NOT the final one you see on screen
+
+
             //vcg::tri::OptimizeUV_ARAP(m,5,0,true);
-            vcg::tri::InitializeArapWithLSCM(m,0);
+            //vcg::tri::InitializeArapWithLSCM(m,0);
+            
             //evaluate the distortion
-            vcg::tri::Distortion<TraceMesh,false>::SetQasDistorsion(m,vcg::tri::Distortion<TraceMesh,false>::EdgeComprStretch);
-            ScalarType A=0;
+            //vcg::tri::Distortion<TraceMesh,false>::SetQasDistorsion(m,vcg::tri::Distortion<TraceMesh,false>::EdgeComprStretch);
+            //ScalarType A=0;
             //ScalarType SumA=0;
-            for (size_t i=0;i<m.face.size();i++)
+            /*for (size_t i=0;i<m.face.size();i++)
             {
 //                SumA+=vcg::DoubleArea(m.face[i]);
 //                A+=m.face[i].Q()*vcg::DoubleArea(m.face[i]);
                 if (m.face[i].Q()<(MinQ()))A+=vcg::DoubleArea(m.face[i]);
                 if (m.face[i].Q()>MaxQ())A+=vcg::DoubleArea(m.face[i]);
-            }
+            }*/
             //return (A/SumA);
-            return A;
+            #ifdef PRINT_PARAFASHION_TIMING
+            steady_clock::time_point post_param = steady_clock::now();
+            int param_time = duration_cast<microseconds>(post_param - pre_param).count();
+            std::cout << "Param time : " << param_time << " [µs]" << std::endl;
+            #endif
+            if (success) return 0;
+            else return 1000000.0;
+            //return A;
         }
     };
 

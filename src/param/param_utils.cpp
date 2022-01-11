@@ -148,9 +148,9 @@ Eigen::MatrixXd paramARAP(const Eigen::MatrixXd& V_3d, const Eigen::MatrixXi& F)
 }
 
 
-Eigen::MatrixXd paramLSCM(const Eigen::MatrixXd& V_3d, const Eigen::MatrixXi& F){
-    Eigen::VectorXi bnd, b(2,1);
-    igl::boundary_loop(F, bnd);
+Eigen::MatrixXd paramLSCM(const Eigen::MatrixXd& V_3d, const Eigen::MatrixXi& F,
+                          const Eigen::VectorXi& bnd){
+    Eigen::VectorXi b(2,1);
     b(0) = bnd(0);
     b(1) = bnd(bnd.size()/2);
     Eigen::MatrixXd bc(2, 2);

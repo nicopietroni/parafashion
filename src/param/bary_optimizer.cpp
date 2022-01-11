@@ -78,9 +78,15 @@ void BaryOptimizer::allocateMemory(int n_faces, int n_vs){
 
     if (enable_dart_sym_eqs_){
         int dart_points = 0; // points with dart target position, i.e. all on dart except tip
-        for (int i=0; i<simple_darts_.size(); i++){
+        /*for (int i=0; i<simple_darts_.size(); i++){
             dart_points += simple_darts_[i].size(); // -1;
+        }*/
+
+        for (int i=0; i<unordered_darts_.size(); i++){
+            dart_points += unordered_darts_[i].pairs_.size() * 2 ; // for pairs
+            dart_points += 1; // for the tip
         }
+
         n_equations_ += dart_points * 2;
         n_triplets_ += dart_points * 2;
 
@@ -262,7 +268,7 @@ void BaryOptimizer::equationsFromTriangle(const Eigen::MatrixXd& V_2d, const Eig
 
 void BaryOptimizer::equationsFromDarts(const Eigen::MatrixXd& V_2d,
                                        const Eigen::MatrixXi& F){
-    for (auto dart: simple_darts_){
+    /*for (auto dart: simple_darts_){
         //if (dart.size() < 3) continue;
         Eigen::RowVector3d sym_axis = dart.computeSymmetryAxis(V_2d);
         Eigen::MatrixXd targets = dart.computeSymmetryTargets(V_2d, sym_axis);
@@ -291,6 +297,59 @@ void BaryOptimizer::equationsFromDarts(const Eigen::MatrixXd& V_2d,
             next_equation_id_ ++;
         }
         
+    }*/
+
+    for (auto dart: unordered_darts_){
+        //if (dart.size() < 3) continue;
+        Eigen::RowVector2d sym_axis = dart.computeSymmetryAxis(V_2d.leftCols(2));
+        std::vector<std::pair<Eigen::RowVector2d, Eigen::RowVector2d>> targets = dart.computeSymmetryTargets(V_2d.leftCols(2), sym_axis);
+
+        if (dart.pairs_.size() != targets.size()){ 
+            std::cout << "Error in equationsFromDarts" << std::endl;
+        }
+
+        for (int i=0; i<dart.pairs_.size(); i++){
+            
+            int vf_id = dart.pairs_[i].first;
+            double targetf_u = targets[i].first(0);
+            triplet_list.push_back(Eigen::Triplet<double>(next_equation_id_, 2 * vf_id, 1.0));
+            b(next_equation_id_) = targetf_u;
+            W.diagonal()[next_equation_id_] = dart_sym_coeff_;
+            next_equation_id_ ++;
+
+            double targetf_v = targets[i].first(1);
+            triplet_list.push_back(Eigen::Triplet<double>(next_equation_id_, 2 * vf_id + 1, 1.0));
+            b(next_equation_id_) = targetf_v;
+            W.diagonal()[next_equation_id_] = dart_sym_coeff_;
+            next_equation_id_ ++;
+
+            int vs_id = dart.pairs_[i].second;
+            double targets_u = targets[i].second(0);
+            triplet_list.push_back(Eigen::Triplet<double>(next_equation_id_, 2 * vs_id, 1.0));
+            b(next_equation_id_) = targets_u;
+            W.diagonal()[next_equation_id_] = dart_sym_coeff_;
+            next_equation_id_ ++;
+
+            double targets_v = targets[i].second(1);
+            triplet_list.push_back(Eigen::Triplet<double>(next_equation_id_, 2 * vs_id + 1, 1.0));
+            b(next_equation_id_) = targets_v;
+            W.diagonal()[next_equation_id_] = dart_sym_coeff_;
+            next_equation_id_ ++;
+        }
+        
+        // tip shouldn't move
+        int vtip_id = dart.tip_;
+        double target_u = V_2d(vtip_id, 0);
+        triplet_list.push_back(Eigen::Triplet<double>(next_equation_id_, 2 * vtip_id, 1.0));
+        b(next_equation_id_) = target_u;
+        W.diagonal()[next_equation_id_] = dart_sym_coeff_;
+        next_equation_id_ ++;
+
+        double target_v = V_2d(vtip_id, 1);
+        triplet_list.push_back(Eigen::Triplet<double>(next_equation_id_, 2 * vtip_id + 1, 1.0));
+        b(next_equation_id_) = target_v;
+        W.diagonal()[next_equation_id_] = dart_sym_coeff_;
+        next_equation_id_ ++;
     }
 }
 
@@ -623,8 +682,19 @@ void BaryOptimizer::measureScore(const Eigen::MatrixXd& V_2d, const Eigen::Matri
 }
 
 void BaryOptimizer::setDarts(std::vector<SimpleDart> simple_darts) {
-    for (SimpleDart d: simple_darts)
-        simple_darts_.push_back(d);
+
+    std::vector<std::vector<std::pair<int, int>>> dart_duplicates;
+    std::vector<int> dart_tips;
+    for (SimpleDart d: simple_darts){
+        dart_tips.push_back(d.tip_id());
+        std::vector<std::pair<int, int>> dart_pairs = {};
+        for (int i=0; i<d.tip(); i++){
+            dart_pairs.push_back({d.v_id(i), d.v_id(d.symmetric(i))});
+        }
+        dart_duplicates.push_back(dart_pairs);
+    }
+
+    setUnorderedDarts(dart_duplicates, dart_tips);
 };
 
 void BaryOptimizer::setDarts(std::vector<std::vector<int>> ordered_cuts) {
@@ -633,9 +703,28 @@ void BaryOptimizer::setDarts(std::vector<std::vector<int>> ordered_cuts) {
         std::vector<int> cut = ordered_cuts[i]; 
         if (cut.size() % 2 == 0) continue;
         SimpleDart sd(cut);
-        sd.print();
         simple_darts.push_back(sd);
     }
 
     setDarts(simple_darts);
 };
+
+void BaryOptimizer::setUnorderedDarts(const std::vector<std::vector<std::pair<int, int>>>& dart_duplicates,
+                                 const std::vector<int>& dart_tips){
+
+    if (A.rows() > 0){
+        std::cout << "setDarts ERROR: memory already allocated, too late to add darts" << std::endl;
+    }
+
+    if (dart_duplicates.size() != dart_tips.size()){
+        std::cout << "ERROR darts of non matching sizes" << std::endl;
+    }
+    else {
+        unordered_darts_.clear();
+
+        for (int i=0; i<dart_tips.size(); i++){
+            UnorderedDart uo(dart_duplicates[i], dart_tips[i]);
+            unordered_darts_.push_back(uo);
+        }
+    }
+}

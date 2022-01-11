@@ -22,7 +22,7 @@
 //}
 
 template <class TriMeshType>
-void ClothParametrize(TriMeshType &mesh,typename TriMeshType::ScalarType error=0.05)
+bool ClothParametrize(TriMeshType &mesh,typename TriMeshType::ScalarType error=0.05)
 {
     Eigen::MatrixXd V;
     Eigen::MatrixXi F;
@@ -32,8 +32,10 @@ void ClothParametrize(TriMeshType &mesh,typename TriMeshType::ScalarType error=0
     ClothParam cloth(V, F, error);
     bool success = cloth.paramAttempt();
 
-    std::cout << "Success: " << success << std::endl;
-    cloth.printStretchStats();
+    if (!success) {
+        cloth.printStretchStats();
+    }
+    
     Eigen::MatrixXd V_uv;
     V_uv = cloth.getV2d();
 
@@ -42,7 +44,7 @@ void ClothParametrize(TriMeshType &mesh,typename TriMeshType::ScalarType error=0
         mesh.vert[i].T().P()[0] = V_uv(i,0);
         mesh.vert[i].T().P()[1] = V_uv(i,1);
     }
-
+    return success;
 }
 
 template <class TriMeshType>
@@ -81,7 +83,7 @@ public:
             (*PatchMeshes.back()).UpdateAttributes();
             //vcg::tri::InitializeArapWithLSCM((*PatchMeshes.back()),0);
             //vcg::tri::OptimizeUV_ARAP((*PatchMeshes.back()),100,0,true);
-            ClothParametrize<TriMeshType>((*PatchMeshes.back()),0.01);
+            ClothParametrize<TriMeshType>((*PatchMeshes.back()),0.0);
 
 //            vcg::Box2<ScalarType> uv_box=vcg::tri::UV_Utils<TriMeshType>::PerVertUVBox(*PatchMeshes.back());
 //            std::cout<<"UV Box Dim Y:"<<uv_box.DimY()<<std::endl;
