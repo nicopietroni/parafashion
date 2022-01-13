@@ -44,8 +44,12 @@ public:
     double edges_coeff_ = 1.0;
 
     // Align V axis with pair of selected vertices
-    bool enable_selected_eqs_ = true;
+    bool enable_selected_eqs_ = false;
     double selected_coeff_ = 20.0;
+
+    // Try to align each triangle vertically
+    bool enable_tri_align_eqs_ = true;
+    double tri_align_coeff_ = 0.5;
 
     // Encourage pairs of points on dart to be symmetric
     bool enable_dart_sym_eqs_ = true;

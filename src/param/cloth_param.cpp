@@ -1,6 +1,11 @@
 #include "param/cloth_param.h"
 #include "param/self_intersect.h"
 
+#define DEBUG_CLOTH_PARAM
+#ifdef DEBUG_CLOTH_PARAM
+#include <igl/writeOBJ.h>
+#endif
+
 ClothParam::ClothParam(const Eigen::MatrixXd& V_3d, const Eigen::MatrixXi& F,
                        double max_stretch,
                        const std::vector<std::vector<std::pair<int, int>>>& dart_duplicates,
@@ -10,14 +15,14 @@ ClothParam::ClothParam(const Eigen::MatrixXd& V_3d, const Eigen::MatrixXi& F,
     igl::boundary_loop(F, bnd_);
     //V_2d_ = paramARAP(V_3d_, F_);
     V_2d_ = paramLSCM(V_3d_, F_, bnd_);
+    V_2d_ *= (V_3d_.col(0).maxCoeff() - V_3d_.col(0).minCoeff()) / (V_2d_.col(0).maxCoeff() - V_2d_.col(0).minCoeff());
     /*if (checkSelfIntersect()){
         //std::cout << "Self intersecting at init" << std::endl;
         // do something ?
     }*/
     setDartPairs(dart_duplicates, dart_tips);
     bo_.allocateMemory(F.rows(), V_3d.rows());
-    bo_.measureScore(V_2d_, V_3d_, F_, stretch_u_, stretch_v_);
-
+    //bo_.measureScore(V_2d_, V_3d_, F_, stretch_u_, stretch_v_);
     
     std::vector<int> selec = autoSelect(V_3d, bnd_);
     bo_.setSelectedVertices(selec);
@@ -32,6 +37,14 @@ ClothParam::ClothParam(const Eigen::MatrixXd& V_3d, const Eigen::MatrixXi& F,
 bool ClothParam::paramAttempt(int max_iter){
     for (int current_iter = 0; current_iter < max_iter; current_iter++){
         bo_.measureScore(V_2d_, V_3d_, F_, stretch_u_, stretch_v_);
+
+        #ifdef DEBUG_CLOTH_PARAM
+        if (stretch_u_.maxCoeff() < -0.5){ // not really supposed to happen if the initialization is ok
+            igl::writeOBJ("../data/buggy/not_good.obj", V_3d_, F_);
+            igl::writeOBJ("../data/buggy/not_good_uv.obj", V_2d_, F_);
+        }
+        #endif
+
         if (constraintSatisfied()){
             return true;
         }

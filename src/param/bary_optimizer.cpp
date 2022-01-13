@@ -1,6 +1,7 @@
 #include "param/bary_optimizer.h"
 
 #include <Eigen/Core>
+#include <Eigen/Geometry>
 #include <iostream>
 
 #include <Eigen/IterativeLinearSolvers> // https://forum.kde.org/viewtopic.php?f=74&t=125165
@@ -93,6 +94,11 @@ void BaryOptimizer::allocateMemory(int n_faces, int n_vs){
         #ifdef LOCALGLOBAL_DEBUG
         std::cout << "dart sym eqs: " << dart_points * 2 << std::endl;
         #endif
+    }
+
+    if (enable_tri_align_eqs_){
+        n_equations_ += n_faces;
+        n_triplets_ += 3 * n_faces;
     }
 
     triplet_list.resize(n_triplets_);
@@ -257,6 +263,41 @@ void BaryOptimizer::equationsFromTriangle(const Eigen::MatrixXd& V_2d, const Eig
             W.diagonal()[next_equation_id_] = edges_coeff_;
             next_equation_id_ ++;
         }
+    }
+
+    if (enable_tri_align_eqs_){
+        Eigen::RowVector3d vertical_axis(0, 1.0, 0.0);
+        vertical_axis = vertical_axis.normalized();
+        Eigen::RowVectorXd Ap = V_3d.row(F(f_id, 0));
+        Eigen::RowVectorXd Bp = V_3d.row(F(f_id, 1));
+        Eigen::RowVectorXd Cp = V_3d.row(F(f_id, 2));
+        Eigen::RowVectorXd Ep = Ap + vertical_axis;
+ 
+        Eigen::Vector3d BpAp = (Bp - Ap).transpose();
+        Eigen::Vector3d CpAp = (Cp - Ap).transpose();
+        Eigen::RowVectorXd n = (BpAp.cross(CpAp)).transpose();
+        n = n.normalized();
+        Eigen::RowVector3d v = Ep - Ap;
+        double dist = v(0) * n(0) + v(1) * n(1) + v(2) * n(2);
+        Eigen::RowVectorXd Ep_proj = Ep - dist * n;
+
+        Eigen::Vector3d bary_E_proj = barycentricCoords(Ep_proj, Ap, Bp, Cp);
+
+
+        double relevance_factor = 1.0 - std::fabs(n.dot(vertical_axis));
+        //std::cout << "relevance_factor: " << relevance_factor << std::endl;
+        double weight = tri_align_coeff_ * relevance_factor;
+
+        // Now the equation: we would like 
+        // A -> E_proj to be aligned with V axis
+        // i.e. (E_proj - A)_v = 0
+        // i.e. bary(E_proj) (A B C) - A = 0v 
+        triplet_list.push_back(Eigen::Triplet<double>(next_equation_id_, 2 * F(f_id, 0), bary_E_proj(0) - 1.0));
+        triplet_list.push_back(Eigen::Triplet<double>(next_equation_id_, 2 * F(f_id, 1), bary_E_proj(1)));
+        triplet_list.push_back(Eigen::Triplet<double>(next_equation_id_, 2 * F(f_id, 2), bary_E_proj(2)));
+        b(next_equation_id_) = 0;
+        W.diagonal()[next_equation_id_] = weight;
+        next_equation_id_ ++;
     }
 
     #ifdef LOCALGLOBAL_TIMING
