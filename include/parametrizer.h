@@ -76,6 +76,7 @@ public:
             mesh.face[i].Q()=i;
 
         std::vector<TriMeshType*> PatchMeshes;
+        ScalarType A=0;
         for (size_t i=0;i<Partitions.size();i++)
         {
             PatchMeshes.push_back(new TriMeshType);
@@ -85,12 +86,14 @@ public:
             //vcg::tri::OptimizeUV_ARAP((*PatchMeshes.back()),100,0,true);
             ClothParametrize<TriMeshType>((*PatchMeshes.back()),0.0);
 
+            A=vcg::tri::UV_Utils<TriMeshType>::PerVertUVArea(*PatchMeshes.back());
 //            vcg::Box2<ScalarType> uv_box=vcg::tri::UV_Utils<TriMeshType>::PerVertUVBox(*PatchMeshes.back());
 //            std::cout<<"UV Box Dim Y:"<<uv_box.DimY()<<std::endl;
 //            std::cout<<"UV Box Dim X:"<<uv_box.DimX()<<std::endl;
 
         }
-        PatchManager<TriMeshType>::ArrangeUVPatches(PatchMeshes,BorderPatch,false);
+        ScalarType AbsDelta=math::Sqrt(A)*BorderPatch;
+        PatchManager<TriMeshType>::ArrangeUVPatches(PatchMeshes,AbsDelta,false);
 
         for (size_t i=0;i<PatchMeshes.size();i++)
             for (size_t j=0;j<PatchMeshes[i]->face.size();j++)
