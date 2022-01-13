@@ -474,6 +474,9 @@ void TW_CALL GenerateSVG(void *)
 
 void TW_CALL SaveData(void *)
 {
+
+    PFashion.SaveDebugPatches("../data/");
+
     //get the path
     std::string ProjM=pathDef;
     size_t indexExt=ProjM.find_last_of(".");
