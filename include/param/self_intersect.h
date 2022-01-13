@@ -19,8 +19,7 @@ bool segmentIntersect(const Eigen::RowVector2d& A,
     return ccw(A, C, D) != ccw(B, C, D) && ccw(A, B, C) != ccw(A, B, D);                  
 }
 
-
-bool selfIntersect(const Eigen::MatrixXd& V_2d, const Eigen::VectorXi& bnd){
+bool selfIntersect2D(const Eigen::MatrixXd& V_2d, const Eigen::VectorXi& bnd){
     double t,u;
     for (int i=0; i<bnd.rows(); i++){
         Eigen::RowVector2d p1 = V_2d.row(bnd(i));
@@ -39,4 +38,9 @@ bool selfIntersect(const Eigen::MatrixXd& V_2d, const Eigen::VectorXi& bnd){
     }
 
     return false;
+}
+
+bool selfIntersect(const Eigen::MatrixXd& V_2d, const Eigen::VectorXi& bnd){
+    if (V_2d.cols() == 2) return selfIntersect2D(V_2d, bnd);
+    else return selfIntersect2D(V_2d.leftCols(2), bnd);
 }

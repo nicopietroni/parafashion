@@ -3,3 +3,4 @@ build/
 lib/AntTweakBar/*
 lib/glew_no_cmake/*
 .vscode/*
+debug_build/*
