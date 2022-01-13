@@ -90,7 +90,7 @@ public:
 //            std::cout<<"UV Box Dim X:"<<uv_box.DimX()<<std::endl;
 
         }
-        PatchManager<TriMeshType>::ArrangeUVPatches(PatchMeshes,BorderPatch);
+        PatchManager<TriMeshType>::ArrangeUVPatches(PatchMeshes,BorderPatch,false);
 
         for (size_t i=0;i<PatchMeshes.size();i++)
             for (size_t j=0;j<PatchMeshes[i]->face.size();j++)

@@ -7,6 +7,7 @@
 #include <tracing/tracer_interface.h>
 #include <tracing/mesh_type.h>
 #include "animation_manager.h"
+#include "vcg/complex/algorithms/parametrization/uv_utils.h"
 
 #define PRINT_PARAFASHION_TIMING 
 #ifdef PRINT_PARAFASHION_TIMING
@@ -108,9 +109,9 @@ public:
 
         ScalarType operator()(MeshType &m) const
         {
-            #ifdef PRINT_PARAFASHION_TIMING
+#ifdef PRINT_PARAFASHION_TIMING
             steady_clock::time_point pre_param = steady_clock::now();
-            #endif
+#endif
             bool success = ClothParametrize<TriMeshType>(m, MaxQ()); // quality-check param, NOT the final one you see on screen
 
 
@@ -129,11 +130,11 @@ public:
                 if (m.face[i].Q()>MaxQ())A+=vcg::DoubleArea(m.face[i]);
             }*/
             //return (A/SumA);
-            #ifdef PRINT_PARAFASHION_TIMING
+#ifdef PRINT_PARAFASHION_TIMING
             steady_clock::time_point post_param = steady_clock::now();
             int param_time = duration_cast<microseconds>(post_param - pre_param).count();
             std::cout << "Param time : " << param_time << " [µs]" << std::endl;
-            #endif
+#endif
             if (success) return 0;
             else return 1000000.0;
             //return A;
@@ -289,10 +290,10 @@ public:
         if ((!use_darts)&&(!allow_self_glue))
             RecursiveProcess<PTracerType>(PTr,100,true,true,PreRemoveStep,false,false,false,DebugMSG);
 
-//        {
-//            std::cout<<"DEDEDE"<<std::endl;
-//            RecursiveProcess<PTracerType>(PTr,100,false,false,false,false,false,false,DebugMSG);
-//        }
+        //        {
+        //            std::cout<<"DEDEDE"<<std::endl;
+        //            RecursiveProcess<PTracerType>(PTr,100,false,false,false,false,false,false,DebugMSG);
+        //        }
 
         if ((use_darts)&&(!allow_self_glue))
             RecursiveProcessWithDarts<PTracerType>(PTr,100,true,true,PreRemoveStep,false,false,false,DebugMSG);
@@ -428,6 +429,48 @@ public:
         vcg::tri::Append<TriMeshType,TriMeshType>::Mesh(reference_mesh_step0,reference_mesh);
     }
 
+    void SaveDebugPatches(const std::string &ProjPath)
+    {
+        std::vector<size_t> StartF;
+        for (size_t i=0;i<deformed_mesh.face.size();i++)
+            StartF.push_back(i);
+
+        std::vector<std::vector<size_t> > Partitions;
+        RetrievePatchesFromSelEdges(deformed_mesh,StartF,Partitions);
+
+        for (size_t i=0;i<Partitions.size();i++)
+        {
+            std::string numPatch=std::to_string(i);
+            std::string Name_3D_mesh=ProjPath+"patch_3D_"+numPatch+".obj";
+            std::string Name_UV_mesh=ProjPath+"patch_UV_"+numPatch+".obj";
+            std::cout<<"Saving:"<<Name_3D_mesh.c_str()<<std::endl;
+            std::cout<<"Saving:"<<Name_UV_mesh.c_str()<<std::endl;
+
+            TriMeshType curr_patch_3D,curr_patch_UV;
+            PatchManager<TriMeshType>::GetMeshFromPatch(deformed_mesh,i,Partitions,curr_patch_3D,true);
+            curr_patch_3D.UpdateAttributes();
+
+
+            //copy UV per Wedge into per vert
+            vcg::tri::UV_Utils<TriMeshType>::CopyWedgeVertUV(curr_patch_3D);
+
+
+            //then do the 2D version
+            vcg::tri::Append<TriMeshType,TriMeshType>::Mesh(curr_patch_UV,curr_patch_3D);
+            //copy UV into coords
+            for (size_t j=0;j<curr_patch_UV.vert.size();j++)
+            {
+                vcg::Point2<ScalarType> UV=curr_patch_UV.vert[j].T().P();
+                //std::cout<<"UV:"<<UV.X()<<","<<UV.Y()<<std::endl;
+                curr_patch_UV.vert[j].P()=CoordType(UV.X(),UV.Y(),0);
+            }
+            curr_patch_UV.UpdateAttributes();
+
+            vcg::tri::io::ExporterOBJ<TriMeshType>::Save(curr_patch_3D,Name_3D_mesh.c_str(),vcg::tri::io::Mask::IOM_ALL);
+            vcg::tri::io::ExporterOBJ<TriMeshType>::Save(curr_patch_UV,Name_UV_mesh.c_str(),vcg::tri::io::Mask::IOM_ALL);
+        }
+    }
+
     void RemoveOnSymmetryPathIfPossible()
     {
         //select along boders, so it is kept as new border when merged
@@ -468,9 +511,9 @@ public:
                 EdgeS.insert(Key);
             }
 
-//        //initialize the tracer
-//        PTracerType PTr(VGraph);
-//        PTr.InitTracer(100,false);
+        //        //initialize the tracer
+        //        PTracerType PTr(VGraph);
+        //        PTr.InitTracer(100,false);
 
         //initialize the tracer
         PTracerType PTr(VGraph);
