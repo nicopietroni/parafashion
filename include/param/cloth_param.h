@@ -36,6 +36,7 @@ public:
     // ----- MISC. ----- //
 
     void printStretchStats() const;
+    void getStretchStats(Eigen::VectorXd& stretch_u, Eigen::VectorXd& stretch_v) const;
 
     Eigen::MatrixXd getV2d(){return V_2d_;}
 
@@ -63,6 +64,7 @@ private:
     // first indexing: dart id
     // second indexing: pair id in dart    
     // pair: two vertex ids, which should be symmetrical w.r.t. dart
+    // note: needs to be called before memory allocation!
     void setDartPairs(const std::vector<std::vector<std::pair<int, int>>>& dart_duplicates,
                       const std::vector<int>& dart_tips);
 };

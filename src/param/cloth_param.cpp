@@ -53,6 +53,12 @@ void ClothParam::printStretchStats() const {
     printf("V: %f -> %f (%f)\n", stretch_v_.minCoeff(), stretch_v_.maxCoeff(), stretch_v_.mean());
 };
 
+
+void ClothParam::getStretchStats(Eigen::VectorXd& stretch_u, Eigen::VectorXd& stretch_v) const {
+    stretch_u = stretch_u_;
+    stretch_v = stretch_v_;
+}
+
 void ClothParam::setAlignmentVertexPair(int v1_id, int v2_id){
     bo_.setSelectedVertices({v1_id, v2_id});
 }
