@@ -1,7 +1,7 @@
 #include "param/cloth_param.h"
 #include "param/self_intersect.h"
 
-#define DEBUG_CLOTH_PARAM
+//#define DEBUG_CLOTH_PARAM
 #ifdef DEBUG_CLOTH_PARAM
 #include <igl/writeOBJ.h>
 #endif
@@ -34,6 +34,12 @@ ClothParam::ClothParam(const Eigen::MatrixXd& V_3d, const Eigen::MatrixXi& F,
 
 };
 
+void ClothParam::paramIter(int n_iter){
+    for (int i=0; i<n_iter; i++){
+        V_2d_ = bo_.localGlobal(V_2d_, V_3d_, F_);
+    }
+}
+
 bool ClothParam::paramAttempt(int max_iter){
     for (int current_iter = 0; current_iter < max_iter; current_iter++){
         bo_.measureScore(V_2d_, V_3d_, F_, stretch_u_, stretch_v_);
@@ -42,6 +48,10 @@ bool ClothParam::paramAttempt(int max_iter){
         if (stretch_u_.maxCoeff() < -0.5){ // not really supposed to happen if the initialization is ok
             igl::writeOBJ("../data/buggy/not_good.obj", V_3d_, F_);
             igl::writeOBJ("../data/buggy/not_good_uv.obj", V_2d_, F_);
+        }
+        if (std::isnan(stretch_u_.maxCoeff())){ // not really supposed to happen if the initialization is ok
+            igl::writeOBJ("../data/buggy/nanned.obj", V_3d_, F_);
+            igl::writeOBJ("../data/buggy/nanned_uv.obj", V_2d_, F_);
         }
         #endif
 

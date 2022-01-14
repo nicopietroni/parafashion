@@ -19,7 +19,8 @@ public:
                const std::vector<int>& dart_tips = {});
 
     // Tries to parameterize. Returns whether max_stretch 
-    // was satisfied within max number of iterations.
+    // was satisfied within max number of iterations,
+    // AND solution doesn't self intersect.
     bool paramAttempt(int max_iter = 10);
 
     // ----- OPTIONAL ----- //
@@ -35,10 +36,21 @@ public:
 
     // ----- MISC. ----- //
 
+    // Runs param for specified number of iterations, without intersection check or 
+    void paramIter(int n_iter);
+
     void printStretchStats() const;
     void getStretchStats(Eigen::VectorXd& stretch_u, Eigen::VectorXd& stretch_v) const;
 
     Eigen::MatrixXd getV2d(){return V_2d_;}
+
+    bool constraintSatisfied(){
+        if (stretch_u_.rows() < 1) return false;
+        return stretch_u_.minCoeff() > -max_stretch_ 
+            && stretch_u_.maxCoeff() < max_stretch_ 
+            && stretch_v_.minCoeff() > -max_stretch_ 
+            && stretch_v_.maxCoeff() < max_stretch_;
+    };
 
 private:
     // Set during init
@@ -51,14 +63,6 @@ private:
     BaryOptimizer bo_;
 
     Eigen::VectorXd stretch_u_, stretch_v_;
-
-    bool constraintSatisfied(){
-        if (stretch_u_.rows() < 1) return false;
-        return stretch_u_.minCoeff() > -max_stretch_ 
-            && stretch_u_.maxCoeff() < max_stretch_ 
-            && stretch_v_.minCoeff() > -max_stretch_ 
-            && stretch_v_.maxCoeff() < max_stretch_;
-    };
 
     // Sets pairs of vertex ids which should be symmetrical in a given dart.
     // first indexing: dart id
