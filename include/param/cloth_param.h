@@ -42,6 +42,10 @@ public:
     void printStretchStats() const;
     void getStretchStats(Eigen::VectorXd& stretch_u, Eigen::VectorXd& stretch_v) const;
 
+    static void measureStretchStats(const Eigen::MatrixXd& V_2d, const Eigen::MatrixXd& V_3d, 
+                                    const Eigen::MatrixXi& F, Eigen::VectorXd& stretch_u, 
+                                    Eigen::VectorXd& stretch_v);
+
     Eigen::MatrixXd getV2d(){return V_2d_;}
 
     bool constraintSatisfied(){

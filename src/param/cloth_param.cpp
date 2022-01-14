@@ -31,7 +31,6 @@ ClothParam::ClothParam(const Eigen::MatrixXd& V_3d, const Eigen::MatrixXi& F,
     Eigen::RowVector3d to(1.0, 0, 0);  
     Eigen::Matrix3d R = computeRotation(from, to);
     V_2d_ = (R * V_2d_.transpose()).transpose();
-
 };
 
 void ClothParam::paramIter(int n_iter){
@@ -80,6 +79,14 @@ void ClothParam::printStretchStats() const {
 void ClothParam::getStretchStats(Eigen::VectorXd& stretch_u, Eigen::VectorXd& stretch_v) const {
     stretch_u = stretch_u_;
     stretch_v = stretch_v_;
+}
+
+
+void ClothParam::measureStretchStats(const Eigen::MatrixXd& V_2d, const Eigen::MatrixXd& V_3d, 
+                                const Eigen::MatrixXi& F, Eigen::VectorXd& stretch_u, 
+                                Eigen::VectorXd& stretch_v){
+    BaryOptimizer bo;
+    bo.measureScore(V_2d, V_3d, F, stretch_u, stretch_v);
 }
 
 void ClothParam::setAlignmentVertexPair(int v1_id, int v2_id){

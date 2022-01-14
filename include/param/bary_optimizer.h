@@ -27,7 +27,7 @@ public:
     Eigen::MatrixXd localGlobal(const Eigen::MatrixXd& V_2d, const Eigen::MatrixXd& V_3d, 
                                 const Eigen::MatrixXi& F);
 
-    void measureScore(const Eigen::MatrixXd& V_2d, const Eigen::MatrixXd& V_3d, 
+    static void measureScore(const Eigen::MatrixXd& V_2d, const Eigen::MatrixXd& V_3d, 
                       const Eigen::MatrixXi& F, Eigen::VectorXd& stretch_u_vec,
                       Eigen::VectorXd& stretch_v_vec);
 

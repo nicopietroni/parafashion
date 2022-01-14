@@ -607,9 +607,6 @@ void BaryOptimizer::measureScore(const Eigen::MatrixXd& V_2d, const Eigen::Matri
                                  const Eigen::MatrixXi& F, Eigen::VectorXd& stretch_u_vec,
                                  Eigen::VectorXd& stretch_v_vec){
 
-    // TODO 
-    // We're recomputing measure directly in Ax=b?
-
     double stretch_u_score = 0;
     double stretch_v_score = 0;
     double edges_score = 0;
@@ -663,7 +660,7 @@ void BaryOptimizer::measureScore(const Eigen::MatrixXd& V_2d, const Eigen::Matri
             
 
         // --- BELOW : edges eqs ---
-
+        /*Eigen::MatrixXd V_tri_2d, V_tri_3d;
         makeTriPoints(V_2d, F, f_id, V_tri_2d);
         makeTriPoints(V_3d, F, f_id, V_tri_3d);
         V_tri_3d = move3Dto2D(V_tri_3d);
@@ -691,14 +688,14 @@ void BaryOptimizer::measureScore(const Eigen::MatrixXd& V_2d, const Eigen::Matri
             double actual_v = V_2d(F(f_id, edge.second), 1) - V_2d(F(f_id, edge.first), 1);
             double target_v = (Bp - Ap)(1);
             edges_score += std::pow(target_v - actual_v, 2);
-        }
+        }*/
     }
 
     stretch_u_score /= F.rows();
     stretch_v_score /= F.rows();
     edges_score /= F.rows();
 
-    double selected_score = -1;
+    /*double selected_score = -1;
     if (selected_vs_.size() >= 2 && selected_vs_[0] >= 0 && selected_vs_[1] >= 0){
         // selected vertices should have = V
         int v0 = selected_vs_[0];
@@ -706,7 +703,7 @@ void BaryOptimizer::measureScore(const Eigen::MatrixXd& V_2d, const Eigen::Matri
         selected_score = std::pow(V_2d(v0, 1) - V_2d(v1, 1), 2); 
     }
     else { // not enough vertices selected
-    }
+    }*/
 
     // No dart score for now
     // equationsFromDarts(V_2d, F); // TODO ?
