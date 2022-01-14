@@ -22,7 +22,10 @@
 //}
 
 template <class TriMeshType>
-bool ClothParametrize(TriMeshType &mesh,typename TriMeshType::ScalarType error=0.05)
+bool ClothParametrize(TriMeshType &mesh,
+//                      std::vector<typename TriMeshType::ScalarType> &StretchU,
+//                      std::vector<typename TriMeshType::ScalarType> &StretchV,
+                      typename TriMeshType::ScalarType error)
 {
     Eigen::MatrixXd V;
     Eigen::MatrixXi F;
@@ -44,6 +47,15 @@ bool ClothParametrize(TriMeshType &mesh,typename TriMeshType::ScalarType error=0
         mesh.vert[i].T().P()[0] = V_uv(i,0);
         mesh.vert[i].T().P()[1] = V_uv(i,1);
     }
+//    Eigen::VectorXd stretch_u;
+//    Eigen::VectorXd stretch_v;
+//    ClothParam.getStretchStats(stretch_u,stretch_v);
+//    StretchU.clear();StretchV.clear();
+//    for (size_t i=0;i<mesh.face.size();i++)
+//    {
+//        StretchU.push_back(stretch_u(i));
+//        StretchV.push_back(stretch_v(i));
+//    }
     return success;
 }
 
@@ -55,7 +67,26 @@ class Parametrizer
     typedef typename TriMeshType::CoordType CoordType;
     typedef typename TriMeshType::ScalarType ScalarType;
 
+    //std::vector<typename TriMeshType::ScalarType> StretchU,StretchV;
+
 public:
+
+    static void SetQasDistorsion()
+    {
+//        assert(StretchU.size()==mesh.face.size());
+//        assert(StretchV.size()==mesh.face.size());
+//        for (size_t i=0;i<mesh.face.size();i++)
+//        {
+//            ScalarType diffU=fabs(StretchU[i]-1);
+//            ScalarType diffV=fabs(StretchV[i]-1);
+//            mesh.face[i].Q()=(diffU > diffV) ? StretchU[i] : StretchV[i];
+//        }
+    }
+
+    static void RetrieveConstraints(TriMeshType &mesh,ScalarType BorderPatch=0)
+    {
+
+    }
 
     static void Parametrize(TriMeshType &mesh,ScalarType BorderPatch=0)
     {
@@ -87,10 +118,6 @@ public:
             ClothParametrize<TriMeshType>((*PatchMeshes.back()),0.0);
 
             A=vcg::tri::UV_Utils<TriMeshType>::PerVertUVArea(*PatchMeshes.back());
-//            vcg::Box2<ScalarType> uv_box=vcg::tri::UV_Utils<TriMeshType>::PerVertUVBox(*PatchMeshes.back());
-//            std::cout<<"UV Box Dim Y:"<<uv_box.DimY()<<std::endl;
-//            std::cout<<"UV Box Dim X:"<<uv_box.DimX()<<std::endl;
-
         }
         ScalarType AbsDelta=math::Sqrt(A)*BorderPatch;
         PatchManager<TriMeshType>::ArrangeUVPatches(PatchMeshes,AbsDelta,false);

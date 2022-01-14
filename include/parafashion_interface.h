@@ -145,7 +145,8 @@ void DerivePatchLayout(const std::vector<std::vector<size_t> > &FacesReference,
     VectorsToTriMesh(FacesDeformed,CoordDeformed,deformed_mesh);
 
     //PROCESS THE DECOMPOSITION
-    Parafashion<TraceMesh> PFashion(deformed_mesh,reference_mesh);
+    AnimationManager<TraceMesh> AManager(deformed_mesh);
+    Parafashion<TraceMesh> PFashion(deformed_mesh,reference_mesh,AManager);
     PFashion.Init();
     PFashion.BatchProcess(ConstrPoints,false,false);
 

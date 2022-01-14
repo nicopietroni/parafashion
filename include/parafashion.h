@@ -29,6 +29,7 @@ class Parafashion
 
     TriMeshType &deformed_mesh;
     TriMeshType &reference_mesh;
+    AnimationManager<TriMeshType> &AManag;
 
     TriMeshType half_def_mesh;
 
@@ -44,6 +45,7 @@ class Parafashion
 public:
 
     PatchMode PMode;
+    FieldMode FMode;
     bool match_valence;
     bool check_stress;
     bool use_darts;
@@ -334,6 +336,7 @@ public:
 
     void  ComputeField(bool SaveStep=true)
     {
+
         if (SaveStep)
         {
             deformed_mesh.Clear();
@@ -347,24 +350,22 @@ public:
         //compute field on half mesh
         half_def_mesh.UpdateSharpFeaturesFromSelection();
 
-        FieldComputation<TriMeshType>::ComputeField(half_def_mesh,FMBoundary,0.5);//,align_border);
+        FieldComputation<TriMeshType>::ComputeField(half_def_mesh,AManag,FMode,1000);//,align_border);
         vcg::tri::CrossField<TriMeshType>::UpdateSingularByCross(half_def_mesh);
         vcg::tri::CrossField<TriMeshType>::SetVertCrossVectorFromFace(half_def_mesh);
         half_def_mesh.InitSingVert();
         half_def_mesh.InitRPos();
 
-        //std::cout<<"3"<<std::endl;
-        Symmetrizer<TriMeshType> Symm(deformed_mesh,reference_mesh);
 
+        Symmetrizer<TriMeshType> Symm(deformed_mesh,reference_mesh);
         PreProcessMesh(half_def_mesh,false);
         Symm.CopyFromHalfDefMesh(half_def_mesh);
 
         //CHECK
-        //half_def_mesh.InitRPos();
-        //std::cout<<"5"<<std::endl;
         deformed_mesh.UpdateSharpFeaturesFromSelection();
 
         Symm.CopyFieldFromHalfDefMesh(half_def_mesh);
+
 
         if (SaveStep)
         {
@@ -605,10 +606,15 @@ public:
         }
     }
 
-    Parafashion(TriMeshType &_deformed_mesh,TriMeshType &_reference_mesh):
-        deformed_mesh(_deformed_mesh),reference_mesh(_reference_mesh)
+    Parafashion(TriMeshType &_deformed_mesh,
+                TriMeshType &_reference_mesh,
+                AnimationManager<TriMeshType> &_AManag):
+                deformed_mesh(_deformed_mesh),
+                reference_mesh(_reference_mesh),
+                AManag(_AManag)
     {
         PMode=PMMinTJuncions;
+        FMode=FMCurvature;
         match_valence=false;
         check_stress=true;
         param_boundary=0.03;

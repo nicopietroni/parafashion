@@ -81,6 +81,8 @@ class AnimationManager
     void InterpolateFaceStretch(const size_t &IndexFace,const size_t &IndexFrame,
                                 CoordType &FaceJU,CoordType &FaceJV);
 
+    void InterpolateFaceNorm(const size_t &IndexFace,const size_t &IndexFrame,
+                             CoordType &InterpNorm);
 
     CoordType InterpolatePos(size_t IndexV,size_t IndexFrame);
 
@@ -134,6 +136,10 @@ public:
                        ScalarType cut_perc=0.1);
 
     void InitTargetDirectionsOnMesh();
+
+    void UpdateAnimationMesh();
+
+    void TransferDirOnMesh(TriMeshType &target);
 
     AnimationManager(TriMeshType &_target_shape);
 };

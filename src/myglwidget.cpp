@@ -116,9 +116,8 @@ bool HasTxt=false;
 PathGL<TraceMesh> GPath;
 
 //#define MAX_DIST 0.05
-
-Parafashion<TraceMesh> PFashion(deformed_mesh,reference_mesh);
 AnimationManager<TraceMesh> AManager(deformed_mesh);
+Parafashion<TraceMesh> PFashion(deformed_mesh,reference_mesh,AManager);
 
 //std::vector<std::vector<TracePosType > > TestPosSeq;
 
@@ -335,7 +334,7 @@ void DoColorByDistortion()
         FaceQ.push_back(deformed_mesh.face[i].Q());
 
     vcg::tri::Distortion<TraceMesh,true>::SetQasDistorsion(deformed_mesh,vcg::tri::Distortion<TraceMesh,true>::EdgeComprStretch);
-
+    //ClothParam::getStretchStats()
     //copy per vertex
     vcg::tri::UpdateQuality<TraceMesh>::VertexFromFace(deformed_mesh);
 
@@ -472,11 +471,13 @@ void TW_CALL GenerateSVG(void *)
     DoGenerateSVG(ProjM);
 }
 
+void TW_CALL SaveDebugPatches(void *)
+{
+    PFashion.SaveDebugPatches(pathDef);
+}
+
 void TW_CALL SaveData(void *)
 {
-
-    PFashion.SaveDebugPatches("../data/");
-
     //get the path
     std::string ProjM=pathDef;
     size_t indexExt=ProjM.find_last_of(".");
@@ -671,11 +672,14 @@ void InitBar(QWidget *w) // AntTweakBar menu
     TwAddSeparator(barFashion,NULL,NULL);
 
     TwAddButton(barFashion,"SymmetrizeDef",SymmetrizeDeformed,0,"label='Symmetrize Deformed'");
-    //    TwEnumVal fieldmodes[2] = { {FMBoundary, "Boundary"},
-    //                                {FMCurvature, "Curvature"}
-    //                              };
-    //TwType fieldMode = TwDefineEnum("FieldMode", fieldmodes, 2);
-    //TwAddVarRW(barFashion, "Field Mode", fieldMode, &FMode, " keyIncr='<' keyDecr='>' help='Change field mode.' ");
+
+    TwEnumVal fieldmodes[3] = { {FMBoundary, "Boundary Only"},
+                                {FMCurvature, "Curvature"},
+                                {FMCurvatureFrames, "Curvature Frames"}
+                              };
+
+    TwType fieldMode = TwDefineEnum("FieldMode", fieldmodes, 3);
+    TwAddVarRW(barFashion, "Field Mode", fieldMode, &PFashion.FMode, " keyIncr='<' keyDecr='>' help='Change field mode.' ");
 
     TwAddButton(barFashion,"ComputeField",SmoothField,0,"label='Compute Field'");
     TwAddVarRW(barFashion,"matchCurv",TW_TYPE_BOOLCPP,
@@ -714,6 +718,7 @@ void InitBar(QWidget *w) // AntTweakBar menu
 
 
     TwAddButton(barFashion,"SaveData",SaveData,0,"label='Save Data'");
+    TwAddButton(barFashion,"SaveDebug",SaveDebugPatches,0,"label='Save Debug Patches'");
 
 
 }

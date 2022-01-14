@@ -91,6 +91,19 @@ void AnimationManager<TriMeshType>::InterpolateFaceField(const size_t &IndexFace
 }
 
 template <class TriMeshType>
+void AnimationManager<TriMeshType>::InterpolateFaceNorm(const size_t &IndexFace,const size_t &IndexFrame,
+                                                         CoordType &InterpNorm)
+{
+    assert(IndexFace<target_shape.face.size());
+    assert(IndexFrame<NumFrames());
+    assert(IndexFrame<PerFrameNormVect.size());
+
+    assert(IndexFace<FaceFaceIdx.size());
+    size_t IndexFAnim=FaceFaceIdx[IndexFace];
+   InterpNorm=PerFrameNormVect[IndexFrame][IndexFAnim];
+}
+
+template <class TriMeshType>
 void AnimationManager<TriMeshType>::InterpolateFaceStretch(const size_t &IndexFace,const size_t &IndexFrame,
                                                            CoordType &FaceJU,CoordType &FaceJV)
 {
@@ -587,6 +600,65 @@ void AnimationManager<TriMeshType>::InitTargetDirectionsAvg()
 }
 
 template <class TriMeshType>
+void AnimationManager<TriMeshType>::UpdateAnimationMesh()
+{
+   //initial check
+   for (size_t i=0;i<PerFrameCurvAnis.size();i++)
+   {
+        assert(PerFrameCurvAnis[i].size()==animated_template_shape.face.size());
+   }
+   //no update needed
+   if (animated_template_shape.face.size()==target_shape.face.size())return;
+
+   //update projection basis
+   UpdateProjectionBasis();
+
+   //allocate
+   std::vector<std::vector<CoordType> > PerFrameNormVect1;
+   std::vector<std::vector<CoordType> > PerFrameCurvVect1;
+   std::vector<std::vector<ScalarType> > PerFrameCurvAnis1;
+   std::vector<std::vector<CoordType> > JU1,JV1;
+   PerFrameNormVect1.resize(NumFrames(),std::vector<CoordType>(target_shape.face.size(),CoordType(0,0,0)));
+   PerFrameCurvVect1.resize(NumFrames(),std::vector<CoordType>(target_shape.face.size(),CoordType(0,0,0)));
+   PerFrameCurvAnis1.resize(NumFrames(),std::vector<ScalarType>(target_shape.face.size(),0));
+   JU1.resize(NumFrames(),std::vector<CoordType>(target_shape.face.size(),CoordType(0,0,0)));
+   JV1.resize(NumFrames(),std::vector<CoordType>(target_shape.face.size(),CoordType(0,0,0)));
+
+   //then update the new
+   for (size_t i=0;i<NumFrames();i++)
+       for (size_t j=0;j<target_shape.face.size();j++)
+       {
+            InterpolateFaceNorm(j,i,PerFrameNormVect1[i][j]);
+            InterpolateFaceField(j,i,PerFrameCurvVect1[i][j],PerFrameCurvAnis1[i][j]);
+            //CoordType test=PerFrameCurvVect1[i][j];
+            InterpolateFaceStretch(j,i,JU1[i][j],JV1[i][j]);
+       }
+
+   //then substitute vectors
+   PerFrameNormVect=PerFrameNormVect1;
+   PerFrameCurvVect=PerFrameCurvVect1;
+   PerFrameCurvAnis=PerFrameCurvAnis1;
+   JU=JU1;
+   JV=JV1;
+
+   //update the mesh
+   animated_template_shape.Clear();
+   vcg::tri::Append<TriMeshType,TriMeshType>::Mesh(animated_template_shape,target_shape);
+   animated_template_shape.InitRPos();
+   animated_template_shape.UpdateAttributes();
+
+   //update the interpolartion bases
+   UpdateProjectionBasis();
+
+   //final check
+   for (size_t i=0;i<PerFrameCurvAnis.size();i++)
+   {
+        assert(PerFrameCurvAnis[i].size()==animated_template_shape.face.size());
+        assert(PerFrameCurvAnis[i].size()==target_shape.face.size());
+   }
+}
+
+template <class TriMeshType>
 void AnimationManager<TriMeshType>::InitTargetDirectionsOnMesh()
 {
     //InitTargetDirections();
@@ -604,6 +676,27 @@ void AnimationManager<TriMeshType>::InitTargetDirectionsOnMesh()
         target_shape.face[i].PD2()=target_shape.face[i].PD1()^target_shape.face[i].N();
         target_shape.face[i].PD1().Normalize();
         target_shape.face[i].PD2().Normalize();
+    }
+}
+
+template <class TriMeshType>
+void AnimationManager<TriMeshType>::TransferDirOnMesh(TriMeshType &target)
+{
+    vcg::GridStaticPtr<FaceType,ScalarType> Grid;
+    Grid.Set(target_shape.face.begin(),target_shape.face.end());
+    ScalarType MaxD=target_shape.bbox.Diag();
+
+    for (size_t i=0;i<target.face.size();i++)
+    {
+        ScalarType MinD;
+        CoordType closestPt,normI,baryP;
+        CoordType BaryF=(target.face[i].P(0)+target.face[i].P(1)+target.face[i].P(2))/3;
+        FaceType *f=vcg::tri::GetClosestFaceBase(target_shape,Grid,BaryF,
+                                                 MaxD,MinD,closestPt,normI,baryP);
+        assert(f!=NULL);
+        target.face[i].PD1()=f->PD1();
+        target.face[i].PD2()=f->PD2();
+        target.face[i].Q()=f->Q();
     }
 }
 

@@ -14,7 +14,9 @@
 #include <vcg/complex/algorithms/attribute_seam.h>
 #include <vcg/complex/algorithms/crease_cut.h>
 #include <vcg/complex/algorithms/parametrization/tangent_field_operators.h>
-enum FieldMode{FMBoundary,FMCurvature};
+#include <animation_manager.h>
+
+enum FieldMode{FMBoundary,FMCurvature,FMCurvatureFrames};
 
 template <class TriMeshType>
 class FieldComputation
@@ -27,7 +29,8 @@ class FieldComputation
 public:
 
     static void ComputeField(TriMeshType &mesh,
-                             FieldMode FMode,
+                             AnimationManager<TriMeshType> &AManag,
+                             FieldMode &FMode,
                              ScalarType CurvatureFidelity,
                              bool DebugMsg=false);
 
