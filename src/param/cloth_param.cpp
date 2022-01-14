@@ -6,6 +6,8 @@
 #include <igl/writeOBJ.h>
 #endif
 
+#define CHECK_TOPOLOGY_PARAM
+
 ClothParam::ClothParam(const Eigen::MatrixXd& V_3d, const Eigen::MatrixXi& F,
                        double max_stretch,
                        const std::vector<std::vector<std::pair<int, int>>>& dart_duplicates,
@@ -13,6 +15,14 @@ ClothParam::ClothParam(const Eigen::MatrixXd& V_3d, const Eigen::MatrixXi& F,
             : F_(F), V_3d_(V_3d), max_stretch_(max_stretch){
     
     igl::boundary_loop(F, bnd_);
+
+    #ifdef CHECK_TOPOLOGY_PARAM
+    std::vector<std::vector<int>> bnds;
+    igl::boundary_loop(F, bnds);
+    if (bnds.size() != 1) 
+        std::cout << "ERROR: wrong topology, number of boundaries = " << bnds.size() << " (should be 1)" << std::endl;
+    #endif
+
     //V_2d_ = paramARAP(V_3d_, F_);
     V_2d_ = paramLSCM(V_3d_, F_, bnd_);
     V_2d_ *= (V_3d_.col(0).maxCoeff() - V_3d_.col(0).minCoeff()) / (V_2d_.col(0).maxCoeff() - V_2d_.col(0).minCoeff());
@@ -40,6 +50,13 @@ void ClothParam::paramIter(int n_iter){
 }
 
 bool ClothParam::paramAttempt(int max_iter){
+    if (!topology_ok) {
+        std::cout << "Topology check failed, aborting parameterizion" << std::endl;
+        V_2d_ = Eigen::MatrixXd::Zero(V_3d_.rows(), 3);
+        stretch_u_ = Eigen::VectorXd::Constant(F_.rows(), 100.0);
+        stretch_v_ = Eigen::VectorXd::Constant(F_.rows(), 100.0);
+        return false;
+    }
     for (int current_iter = 0; current_iter < max_iter; current_iter++){
         bo_.measureScore(V_2d_, V_3d_, F_, stretch_u_, stretch_v_);
 

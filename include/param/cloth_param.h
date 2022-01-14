@@ -56,6 +56,8 @@ public:
             && stretch_v_.maxCoeff() < max_stretch_;
     };
 
+    bool topology_ok = true;
+
 private:
     // Set during init
     const Eigen::MatrixXd V_3d_;
