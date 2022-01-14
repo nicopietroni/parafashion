@@ -20,6 +20,11 @@
 //    else
 //        vcg::tri::OptimizeUV_LSCM(mesh,TriMeshType::VertexType::SELECTED);
 //}
+//template <class TriMeshType>
+//void Decimate()
+//{
+
+//}
 
 template <class TriMeshType>
 bool ClothParametrize(TriMeshType &mesh,

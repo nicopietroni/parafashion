@@ -287,15 +287,10 @@ public:
 
 
         PTr.InitTracer(100,DebugMSG);
-
+        PTr.AllowRemoveConcave=true;
 
         if ((!use_darts)&&(!allow_self_glue))
             RecursiveProcess<PTracerType>(PTr,100,true,true,PreRemoveStep,false,false,false,DebugMSG);
-
-        //        {
-        //            std::cout<<"DEDEDE"<<std::endl;
-        //            RecursiveProcess<PTracerType>(PTr,100,false,false,false,false,false,false,DebugMSG);
-        //        }
 
         if ((use_darts)&&(!allow_self_glue))
             RecursiveProcessWithDarts<PTracerType>(PTr,100,true,true,PreRemoveStep,false,false,false,DebugMSG);
