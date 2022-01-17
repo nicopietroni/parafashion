@@ -103,12 +103,31 @@ Eigen::Vector3d barycentricCoords(const Eigen::RowVector3d& p, const Eigen::RowV
     return Eigen::Vector3d(u, v, w);
 }
 
+Eigen::Matrix3d computeRotation(const Eigen::RowVector3d& from,
+                                const Eigen::RowVector3d& to){
+    // There might already be something like this in Eigen? Couldn't find it
+    // https://math.stackexchange.com/questions/180418/calculate-rotation-matrix-to-align-vector-a-to-vector-b-in-3d
+    Eigen::RowVector3d a = from.normalized();
+    Eigen::RowVector3d b = to.normalized();
+    if (a==b || a == -b) std::cout << "ERROR: case not handled in computeRotation" << std::endl;
+    Eigen::RowVector3d v = a.cross(b);
+    double s = v.norm();
+    double c = a.dot(b);
+    Eigen::Matrix3d vs;
+    vs <<     0, -v[2],  v[1], 
+           v[2],     0, -v[0], 
+          -v[1],  v[0],     0;
+
+    return Eigen::Matrix3d::Identity() + vs + vs * vs * 1.0 / (1.0+c);
+}
+
 #include <igl/arap.h>
 #include <igl/boundary_loop.h>
 #include <igl/harmonic.h>
 #include <igl/map_vertices_to_circle.h>
 
-Eigen::MatrixXd paramARAP(const Eigen::MatrixXd& V_3d, const Eigen::MatrixXi& F){
+Eigen::MatrixXd paramARAP(const Eigen::MatrixXd& V_3d, const Eigen::MatrixXi& F,
+                          const Eigen::VectorXi& bnd){
 
     Eigen::MatrixXd V_2d, V_3db;
     V_3db = V_3d;
@@ -116,8 +135,6 @@ Eigen::MatrixXd paramARAP(const Eigen::MatrixXd& V_3d, const Eigen::MatrixXi& F)
     V_3db = V_3db.array() / scale; 
 
     // Compute the initial solution for ARAP (harmonic parametrization)
-    Eigen::VectorXi bnd;
-    igl::boundary_loop(F, bnd);
     Eigen::MatrixXd bnd_uv;
     igl::map_vertices_to_circle(V_3db, bnd, bnd_uv);
 
@@ -164,20 +181,67 @@ Eigen::MatrixXd paramLSCM(const Eigen::MatrixXd& V_3d, const Eigen::MatrixXi& F,
     return V_2db;
 }
 
-Eigen::Matrix3d computeRotation(const Eigen::RowVector3d& from,
-                                const Eigen::RowVector3d& to){
-    // There might already be something like this in Eigen? Couldn't find it
-    // https://math.stackexchange.com/questions/180418/calculate-rotation-matrix-to-align-vector-a-to-vector-b-in-3d
-    Eigen::RowVector3d a = from.normalized();
-    Eigen::RowVector3d b = to.normalized();
-    if (a==b || a == -b) std::cout << "ERROR: case not handled in computeRotation" << std::endl;
-    Eigen::RowVector3d v = a.cross(b);
-    double s = v.norm();
-    double c = a.dot(b);
-    Eigen::Matrix3d vs;
-    vs <<     0, -v[2],  v[1], 
-           v[2],     0, -v[0], 
-          -v[1],  v[0],     0;
+// SCAF
+#include <igl/triangle/scaf.h>
+#include <igl/arap.h>
+#include <igl/boundary_loop.h>
+#include <igl/harmonic.h>
+#include <igl/map_vertices_to_circle.h>
+#include <igl/MappingEnergyType.h>
+#include <igl/doublearea.h>
+#include <igl/PI.h>
+#include <igl/flipped_triangles.h>
+#include <igl/topological_hole_fill.h>
 
-    return Eigen::Matrix3d::Identity() + vs + vs * vs * 1.0 / (1.0+c);
+Eigen::MatrixXd paramSCAF(const Eigen::MatrixXd& V_3d, const Eigen::MatrixXi& F, const Eigen::VectorXi& bnd){
+
+    int scaf_iterations = 10;
+
+    Eigen::MatrixXd bnd_uv, uv_init;
+    igl::triangle::SCAFData scaf_data;
+
+    Eigen::VectorXd M;
+    igl::doublearea(V_3d, F, M);
+    
+    /*std::vector<std::vector<int>> all_bnds;
+    igl::boundary_loop(F, all_bnds);
+    // Heuristic primary boundary choice: longest
+    auto primary_bnd = std::max_element(all_bnds.begin(), all_bnds.end(), [](const std::vector<int> &a, const std::vector<int> &b) { return a.size()<b.size(); });
+
+    Eigen::VectorXi bnd = Eigen::Map<Eigen::VectorXi>(primary_bnd->data(), primary_bnd->size());*/
+
+    igl::map_vertices_to_circle(V_3d, bnd, bnd_uv);
+    bnd_uv *= sqrt(M.sum() / (2 * igl::PI));
+
+    if (bnd.rows() == V_3d.rows()){ // case: all vertex on boundary
+        uv_init.resize(V_3d.rows(), 2);
+        for (int i = 0; i < bnd.rows(); i++)
+        uv_init.row(bnd(i)) = bnd_uv.row(i);
+    }
+    else{
+        igl::harmonic(V_3d, F, bnd, bnd_uv, 1, uv_init);
+        if (igl::flipped_triangles(uv_init, F).size() != 0)
+        igl::harmonic(F, bnd, bnd_uv, 1, uv_init); // fallback uniform laplacian
+    }
+    
+    
+
+    Eigen::VectorXi b; Eigen::MatrixXd bc;
+
+    igl::triangle::scaf_precompute(V_3d, F, uv_init, scaf_data, igl::MappingEnergyType::SYMMETRIC_DIRICHLET, b, bc, 0);
+
+    for (int i=0; i<scaf_iterations; i++){
+        igl::triangle::scaf_solve(scaf_data, 1);
+    }
+
+    Eigen::MatrixXd V_2d(V_3d.rows(), 2);
+    V_2d = scaf_data.w_uv.topRows(V_3d.rows());
+
+
+    Eigen::MatrixXd V_2db = Eigen::MatrixXd::Zero(V_3d.rows(), 3);
+    V_2db.col(0) = V_2d.col(0);
+    V_2db.col(1) = V_2d.col(1);
+    return V_2d;
 }
+
+

@@ -7,6 +7,8 @@
 #include "param/param_utils.h"
 #include "param/auto_select.h"
 
+enum CLOTH_INIT_TYPE {CLOTH_INIT_ARAP, CLOTH_INIT_LSCM, CLOTH_INIT_SCAF};
+
 class ClothParam {
 public:
 
@@ -16,7 +18,8 @@ public:
     ClothParam(const Eigen::MatrixXd& V_3d, const Eigen::MatrixXi& F,
                double max_stretch = 0.05,
                const std::vector<std::vector<std::pair<int, int>>>& dart_duplicates = {},
-               const std::vector<int>& dart_tips = {});
+               const std::vector<int>& dart_tips = {},
+               CLOTH_INIT_TYPE = CLOTH_INIT_ARAP);
 
     // Tries to parameterize. Returns whether max_stretch 
     // was satisfied within max number of iterations,
@@ -63,6 +66,7 @@ private:
     const Eigen::MatrixXd V_3d_;
     const Eigen::MatrixXi F_;
     const double max_stretch_;
+    CLOTH_INIT_TYPE init_type_;
 
     Eigen::VectorXi bnd_;
     Eigen::MatrixXd V_2d_;
