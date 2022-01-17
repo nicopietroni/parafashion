@@ -23,7 +23,8 @@ bool finalParamMultiPatch(const std::vector<Eigen::MatrixXd>& vec_V_3d,
                           const std::vector<std::vector<std::vector<std::pair<int, int>>>>& vec_dart_duplicates,
                           const std::vector<std::vector<int>>& vec_dart_tips,
                           const std::vector<Seam>& seams,
-                          std::vector<Eigen::MatrixXd>& vec_V_2d){
+                          std::vector<Eigen::MatrixXd>& vec_V_2d,
+                          CLOTH_INIT_TYPE init_type = CLOTH_INIT_ARAP){
     
     int n_patches = vec_V_3d.size();
     if (n_patches != vec_F.size()){
@@ -35,7 +36,8 @@ bool finalParamMultiPatch(const std::vector<Eigen::MatrixXd>& vec_V_3d,
         std::unique_ptr<ClothParam> ptr(new ClothParam(vec_V_3d[patch_id], 
                            vec_F[patch_id], 0.0, 
                            vec_dart_duplicates[patch_id], 
-                           vec_dart_tips[patch_id]));
+                           vec_dart_tips[patch_id],
+                           init_type));
         cloth_ps.push_back(std::move(ptr));
     }
     

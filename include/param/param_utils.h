@@ -34,8 +34,9 @@ Eigen::VectorXd vertices2dToVector(const Eigen::MatrixXd& V);
 Eigen::Vector3d barycentricCoords(const Eigen::RowVector3d& p, const Eigen::RowVector3d& a, 
                                          const Eigen::RowVector3d& b, const Eigen::RowVector3d& c);
 
-Eigen::MatrixXd paramARAP(const Eigen::MatrixXd& V_3d, const Eigen::MatrixXi& F);
+Eigen::MatrixXd paramARAP(const Eigen::MatrixXd& V_3d, const Eigen::MatrixXi& F, const Eigen::VectorXi& bnd);
 Eigen::MatrixXd paramLSCM(const Eigen::MatrixXd& V_3d, const Eigen::MatrixXi& F, const Eigen::VectorXi& bnd);
+Eigen::MatrixXd paramSCAF(const Eigen::MatrixXd& V_3d, const Eigen::MatrixXi& F, const Eigen::VectorXi& bnd);
 
 Eigen::Matrix3d computeRotation(const Eigen::RowVector3d& from,
                                 const Eigen::RowVector3d& to);

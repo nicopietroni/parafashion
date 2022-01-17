@@ -11,8 +11,9 @@
 ClothParam::ClothParam(const Eigen::MatrixXd& V_3d, const Eigen::MatrixXi& F,
                        double max_stretch,
                        const std::vector<std::vector<std::pair<int, int>>>& dart_duplicates,
-                       const std::vector<int>& dart_tips)
-            : F_(F), V_3d_(V_3d), max_stretch_(max_stretch){
+                       const std::vector<int>& dart_tips,
+                       CLOTH_INIT_TYPE init_type)
+            : F_(F), V_3d_(V_3d), max_stretch_(max_stretch), init_type_(init_type){
     
     igl::boundary_loop(F, bnd_);
 
@@ -23,8 +24,16 @@ ClothParam::ClothParam(const Eigen::MatrixXd& V_3d, const Eigen::MatrixXi& F,
         std::cout << "ERROR: wrong topology, number of boundaries = " << bnds.size() << " (should be 1)" << std::endl;
     #endif
 
-    //V_2d_ = paramARAP(V_3d_, F_);
-    V_2d_ = paramLSCM(V_3d_, F_, bnd_);
+    if (init_type_ == CLOTH_INIT_ARAP){
+        V_2d_ = paramARAP(V_3d_, F_, bnd_);
+    }
+    else if (init_type_ == CLOTH_INIT_LSCM){
+        V_2d_ = paramLSCM(V_3d_, F_, bnd_);
+    }
+    else if (init_type_ == CLOTH_INIT_SCAF){
+        V_2d_ = paramSCAF(V_3d_, F_, bnd_);
+    }
+
     V_2d_ *= (V_3d_.col(0).maxCoeff() - V_3d_.col(0).minCoeff()) / (V_2d_.col(0).maxCoeff() - V_2d_.col(0).minCoeff());
     /*if (checkSelfIntersect()){
         //std::cout << "Self intersecting at init" << std::endl;
