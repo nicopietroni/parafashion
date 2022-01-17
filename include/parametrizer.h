@@ -10,6 +10,9 @@
 #include <vcg/complex/algorithms/mesh_to_matrix.h>
 #include <param/cloth_param.h>
 
+
+enum ParamMode{PMConformal,PMArap,PMCloth};
+
 //enum ParamType{Arap,LSQMap};
 
 //template <class TriMeshType>
@@ -93,7 +96,9 @@ public:
 
     }
 
-    static void Parametrize(TriMeshType &mesh,ScalarType BorderPatch=0)
+    static void Parametrize(TriMeshType &mesh,
+                            ParamMode UVMode,
+                            ScalarType BorderPatch=0)
     {
         std::vector<size_t> StartF;
         for (size_t i=0;i<mesh.face.size();i++)
@@ -118,9 +123,13 @@ public:
             PatchMeshes.push_back(new TriMeshType);
             PatchManager<TriMeshType>::GetMeshFromPatch(mesh,i,Partitions,(*PatchMeshes.back()),true);
             (*PatchMeshes.back()).UpdateAttributes();
-            //vcg::tri::InitializeArapWithLSCM((*PatchMeshes.back()),0);
-            //vcg::tri::OptimizeUV_ARAP((*PatchMeshes.back()),100,0,true);
-            ClothParametrize<TriMeshType>((*PatchMeshes.back()),0.0);
+
+            if (UVMode==PMConformal)
+                vcg::tri::InitializeArapWithLSCM((*PatchMeshes.back()),0);
+            if (UVMode==PMArap)
+                vcg::tri::OptimizeUV_ARAP((*PatchMeshes.back()),100,0,true);
+            if (UVMode==PMCloth)
+                ClothParametrize<TriMeshType>((*PatchMeshes.back()),0.0);
 
             A=vcg::tri::UV_Utils<TriMeshType>::PerVertUVArea(*PatchMeshes.back());
         }

@@ -58,7 +58,7 @@
 #include "wrap/qt/Outline2ToQImage.h"
 #include <svg_exporter.h>
 #include "parafashion.h"
-#include "parafashion_interface.h"
+//#include "parafashion_interface.h"
 
 std::string pathRef="";
 std::string pathDef="";
@@ -590,8 +590,8 @@ void UpdateBaseColorMesh()
 
 void DoBatchProcess()
 {
-
-    PFashion.BatchProcess(GPath.PickedPoints);
+    std::vector<bool> Soft(GPath.PickedPoints.size(),true);
+    PFashion.BatchProcess(GPath.PickedPoints);//,Soft);
     if (hasFrames)
     {
         AManager.UpdateProjectionBasis();
@@ -612,6 +612,12 @@ void TW_CALL BatchProcess(void *)
 {
     DoBatchProcess();
 }
+
+void TW_CALL TestCol(void *)
+{
+    PFashion.ColorByConvexity();
+}
+
 
 
 void SetFieldBarSizePosition(QWidget *w)
@@ -702,14 +708,32 @@ void InitBar(QWidget *w) // AntTweakBar menu
     TwAddVarRW(barFashion,"ParamBound",TW_TYPE_DOUBLE,
                &PFashion.param_boundary," label='Boundary Tolerance'");
 
+    TwEnumVal parammode[3] = { {PMConformal, "Conformal"},
+                               {PMArap, "Arap"},
+                               {PMCloth, "Cloth"}
+                             };
+    TwType paramMode = TwDefineEnum("ParamMode", parammode, 3);
+    TwAddVarRW(barFashion, "UV Mode", paramMode, &PFashion.UVMode, " keyIncr='<' keyDecr='>' help='Change param mode.' ");
+
     TwAddButton(barFashion,"Parametrize",Parametrize,0,"label='Parametrize Deformed'");
 
     TwAddSeparator(barFashion,NULL,NULL);
     TwAddVarRW(barFashion,"RemoveSym",TW_TYPE_BOOLCPP,&PFashion.remove_along_symmetry," label='Rem Symmetry'");
     TwAddVarRW(barFashion,"checkStress",TW_TYPE_BOOLCPP,&PFashion.check_stress," label='Check Stress'");
+    TwAddVarRW(barFashion,"remesh",TW_TYPE_BOOLCPP,&PFashion.remesh_on_test," label='Simplify to Test'");
+
     TwAddVarRW(barFashion,"MaxCompr",TW_TYPE_DOUBLE,&PFashion.max_compression," label='Max Compression'");
     TwAddVarRW(barFashion,"MaxTens",TW_TYPE_DOUBLE,&PFashion.max_tension," label='Max Tension'");
 
+
+    TwEnumVal priomode[3] = { {PrioModBlend, "Blend"},
+                               {PrioModeLoop, "Loop"},
+                               {PrioModBorder, "Border"}
+                             };
+    TwType prioMode = TwDefineEnum("PrioMode", priomode, 3);
+    TwAddVarRW(barFashion, "Priority Mode", prioMode, &PFashion.PrioMode, " keyIncr='<' keyDecr='>' help='Change priority mode.' ");
+    TwAddVarRW(barFashion,"CheckUV",TW_TYPE_BOOLCPP,&PFashion.CheckUVIntersection," label='Check UV Inters'");
+    TwAddVarRW(barFashion,"SmoothRem",TW_TYPE_BOOLCPP,&PFashion.SmoothBeforeRemove," label='Smooth Before Remove'");
 
     TwAddButton(barFashion,"BatchProcess",BatchProcess,0,"label='Batch Process'");
     //TwAddButton(barFashion,"BatchProcess 2",BatchProcess2,0,"label='Batch Process 2'");
@@ -719,6 +743,8 @@ void InitBar(QWidget *w) // AntTweakBar menu
 
     TwAddButton(barFashion,"SaveData",SaveData,0,"label='Save Data'");
     TwAddButton(barFashion,"SaveDebug",SaveDebugPatches,0,"label='Save Debug Patches'");
+
+    TwAddButton(barFashion,"Test Color",TestCol,0,"label='Test Colorization'");
 
 
 }

@@ -148,7 +148,9 @@ void DerivePatchLayout(const std::vector<std::vector<size_t> > &FacesReference,
     AnimationManager<TraceMesh> AManager(deformed_mesh);
     Parafashion<TraceMesh> PFashion(deformed_mesh,reference_mesh,AManager);
     PFashion.Init();
-    PFashion.BatchProcess(ConstrPoints,false,false);
+
+    std::vector<bool> Soft(ConstrPoints.size(),true);
+    PFashion.BatchProcess(ConstrPoints,Soft,false,false);
 
 
     Partition.clear();

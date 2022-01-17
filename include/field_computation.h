@@ -12,7 +12,7 @@
 #include <iostream>
 #include <fstream>
 #include <vcg/complex/algorithms/attribute_seam.h>
-#include <vcg/complex/algorithms/crease_cut.h>
+//#include <vcg/complex/algorithms/crease_cut.h>
 #include <vcg/complex/algorithms/parametrization/tangent_field_operators.h>
 #include <animation_manager.h>
 

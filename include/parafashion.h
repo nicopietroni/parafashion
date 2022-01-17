@@ -9,6 +9,14 @@
 #include "animation_manager.h"
 #include "vcg/complex/algorithms/parametrization/uv_utils.h"
 
+#include <vcg/complex/algorithms/isotropic_remeshing.h>
+#include <vcg/complex/algorithms/crease_cut.h>
+#include <vcg/complex/algorithms/local_optimization/tri_edge_collapse.h>
+#include <vcg/complex/algorithms/local_optimization/tri_edge_collapse_quadric.h>
+
+#include <igl/principal_curvature.h>
+#include <vcg/complex/algorithms/update/color.h>
+
 #define PRINT_PARAFASHION_TIMING 
 #ifdef PRINT_PARAFASHION_TIMING
 #include <chrono>
@@ -18,6 +26,188 @@ using std::chrono::microseconds;
 #endif
 
 enum PatchMode{PMMinTJuncions,PMAvgTJuncions,PMAllTJuncions};
+
+template <class TriMeshType>
+bool HasDart(TriMeshType &m)
+{
+    TriMeshType m1;
+    vcg::tri::Append<TriMeshType,TriMeshType>::Mesh(m1,m);
+    vcg::tri::Clean<TriMeshType>::RemoveDuplicateVertex(m1);
+    vcg::tri::Allocator<TriMeshType>::CompactEveryVector(m1);
+    return(m1.vert.size()!=m.vert.size());
+}
+
+template <class TriMeshType>
+void PreProcessMeshForRemeshing(TriMeshType &m,
+                                bool merge,
+                                typename TriMeshType::ScalarType damp=0.5,
+                                size_t smooth_step=2)
+{
+    typedef typename TriMeshType::CoordType CoordType;
+    typedef typename TriMeshType::ScalarType ScalarType;
+
+    //first select all borders
+    typename TriMeshType::ScalarType AvgL=0;
+    size_t Num=0;
+    for (size_t i=0;i<m.face.size();i++)
+        for (size_t j=0;j<3;j++)
+        {
+            AvgL+=(m.face[i].P0(j)-m.face[i].P1(j)).Norm();
+            Num++;
+            if (!vcg::face::IsBorder(m.face[i],j))continue;
+            m.face[i].SetFaceEdgeS(j);
+        }
+
+    //merge vertices
+    if (merge)
+        vcg::tri::Clean<TriMeshType>::RemoveDuplicateVertex(m);
+
+    //then smooth only selected vertices
+    for (size_t s=0;s<smooth_step;s++)
+    {
+        std::vector<CoordType> PrevPos(m.vert.size(),CoordType(0,0,0));
+        for (size_t i=0;i<m.vert.size();i++)
+            PrevPos[i]=m.vert[i].P();
+
+        //smooth the border first
+        std::vector<CoordType> AvgPos(m.vert.size(),CoordType(0,0,0));
+        std::vector<size_t> Num(m.vert.size(),0);
+        vcg::tri::UpdateSelection<TriMeshType>::VertexAll(m);
+        for (size_t i=0;i<m.face.size();i++)
+            for (size_t j=0;j<3;j++)
+            {
+                if (!m.face[i].IsFaceEdgeS(j))continue;
+                size_t IndexV0=vcg::tri::Index(m,m.face[i].V0(j));
+                size_t IndexV1=vcg::tri::Index(m,m.face[i].V1(j));
+                m.vert[IndexV0].ClearS();
+                m.vert[IndexV1].ClearS();
+                CoordType P0=m.face[i].P0(j);
+                CoordType P1=m.face[i].P1(j);
+                AvgPos[IndexV0]+=P1;
+                AvgPos[IndexV1]+=P0;
+                Num[IndexV0]++;
+                Num[IndexV1]++;
+            }
+        //average borders
+        for (size_t i=0;i<m.vert.size();i++)
+        {
+            if (Num[i]==0)continue;
+
+            assert(!m.vert[i].IsS());
+
+            CoordType TargetP=AvgPos[i]/Num[i];
+            m.vert[i].P()=TargetP;//m.vert[i].P()*0.5+TargetP*0.5;
+        }
+        //smooth the rest
+        vcg::tri::Smooth<TriMeshType>::VertexCoordLaplacian(m,1,true);
+
+        //apply damp
+        for (size_t i=0;i<m.vert.size();i++)
+            m.vert[i].P()=PrevPos[i]*damp+m.vert[i].P()*(1-damp);
+    }
+}
+
+template <class TriMeshType>
+void Remesh(TriMeshType &m,typename TriMeshType::ScalarType reduction=2)
+{
+    typedef typename TriMeshType::ScalarType ScalarType;
+
+    PreProcessMeshForRemeshing(m,true);
+
+    //    bool hasdart=HasDart(m);
+    //    if (hasdart)
+    //        vcg::tri::io::ExporterPLY<TriMeshType>::Save(m,"before_rem.ply");
+
+    //get average edge
+    typename TriMeshType::ScalarType AvgL=0;
+    size_t Num=0;
+    for (size_t i=0;i<m.face.size();i++)
+        for (size_t j=0;j<3;j++)
+        {
+            AvgL+=(m.face[i].P0(j)-m.face[i].P1(j)).Norm();
+            Num++;
+        }
+    AvgL/=Num;
+
+    //then remesh
+    typename vcg::tri::IsotropicRemeshing<TriMeshType>::Params para;
+    para.iter = 5;
+    para.splitFlag    = false;
+    para.swapFlag     = true;
+    para.collapseFlag = true;
+    para.smoothFlag   = true;
+    para.projectFlag  = false;
+    para.selectedOnly = false;
+    para.adapt=false;
+    //para.aspectRatioThr = 0.3;
+
+
+    //para.maxSurfDist = m.bbox.Diag() / 2500.;
+    para.surfDistCheck = false;
+    para.userSelectedCreases = true;
+
+
+    ScalarType edgeL = AvgL*reduction;
+    para.SetTargetLen(edgeL);
+
+    //std::cout << "Before Remeshing - faces: " << m.FN() << " quality: " <<  computeAR(m) << std::endl;
+    vcg::tri::IsotropicRemeshing<TriMeshType>::Do(m, para);
+
+    //then re-cut
+    //vcg::tri::CutMeshAlongSelectedFaceEdges(m);
+    VertSplitter<TriMeshType>::SplitAlongEdgeSel(m);
+
+    vcg::tri::Clean<TriMeshType>::RemoveUnreferencedVertex(m);
+    vcg::tri::Allocator<TriMeshType>::CompactEveryVector(m);
+
+    m.UpdateAttributes();
+
+    //    //save test if has dart
+    //    if (hasdart)
+    //    {
+    //        vcg::tri::io::ExporterPLY<TriMeshType>::Save(m,"after_rem.ply");
+    //        exit(0);
+    //    }
+}
+
+template <class TriMeshType>
+void RemeshByDeci(TriMeshType &m,typename TriMeshType::ScalarType reduction=2)
+{
+    typedef typename TriMeshType::ScalarType ScalarType;
+    typedef typename TriMeshType::VertexType VertexType;
+    typedef typename vcg::tri::BasicVertexPair<VertexType> VertPair;
+
+    class MyTriEdgeCollapse: public vcg::tri::TriEdgeCollapse< TriMeshType, VertPair, MyTriEdgeCollapse>{
+    public:
+        inline MyTriEdgeCollapse(const VertPair &p, int mark, BaseParameterClass *pp)
+        {
+            this->localMark = mark;
+            this->pos=p;
+            this->_priority = this->ComputePriority(pp);
+        }
+    };
+
+    PreProcessMeshForRemeshing(m,false);
+
+    vcg::BaseParameterClass BClass;
+    vcg::LocalOptimization<TriMeshType> DeciSession(m,&BClass);
+    DeciSession.template Init<MyTriEdgeCollapse >();
+
+    //DeciSession.SetTargetSimplices(target_faces);
+    size_t targetV=m.vert.size()/reduction;
+    std::cout<<"Target:"<<targetV<<std::endl;
+    //DeciSession.SetTargetVertices(targetV);
+    m.UpdateAttributes();
+    while(DeciSession.DoOptimization() && m.vn>targetV ){};
+
+    //    //then re-cut
+    //    vcg::tri::CutMeshAlongSelectedFaceEdges(m);
+
+    vcg::tri::Clean<TriMeshType>::RemoveUnreferencedVertex(m);
+    vcg::tri::Allocator<TriMeshType>::CompactEveryVector(m);
+
+    m.UpdateAttributes();
+}
 
 template <class TriMeshType>
 class Parafashion
@@ -46,18 +236,22 @@ public:
 
     PatchMode PMode;
     FieldMode FMode;
+    ParamMode UVMode;
+
     bool match_valence;
     bool check_stress;
     bool use_darts;
     bool allow_self_glue;
     bool remove_along_symmetry;
-
     ScalarType param_boundary;
     size_t max_corners;
     ScalarType max_compression;
     ScalarType max_tension;
-
+    bool remesh_on_test;
+    bool CheckUVIntersection;
+    bool SmoothBeforeRemove;
     std::vector<typename TraceMesh::CoordType> PatchCornerPos;
+    PriorityMode PrioMode;
 
     void CleanMeshAttributes()
     {
@@ -95,6 +289,14 @@ public:
 
     public:
 
+        static ParamMode &UVMode()
+        {
+            static ParamMode CurrUVMode=PMConformal;
+            return CurrUVMode;
+        }
+
+        //{PMConformal,PMArap,PMCloth};
+
         static ScalarType & MinQ()
         {
             static ScalarType MinV=-0.05;
@@ -107,38 +309,97 @@ public:
             return MaxV;
         }
 
+        static bool & RemeshOnTest()
+        {
+            static bool rem=false;
+            return rem;
+        }
+
         MeshArapQuality(){}
 
         ScalarType operator()(MeshType &m) const
         {
+
 #ifdef PRINT_PARAFASHION_TIMING
             steady_clock::time_point pre_param = steady_clock::now();
 #endif
-            bool success = ClothParametrize<TriMeshType>(m, MaxQ()); // quality-check param, NOT the final one you see on screen
+            if (RemeshOnTest())
+                Remesh(m);
+            //RemeshByDeci(m);
 
+            //            size_t numH=vcg::tri::Clean<TriMeshType>::CountHoles(m);
+            //            if (numH!=1)
+            //            {
+            //                vcg::tri::io::ExporterPLY<TriMeshType>::Save(m,"test_holes.ply");
+            //                assert(0);
+            //            }
 
+            //assert(numH==1);
+
+            //,PMArap,
+            if (UVMode()==PMCloth)
+            {
+                bool success = ClothParametrize<TriMeshType>(m, MaxQ()); // quality-check param, NOT the final one you see on screen
+#ifdef PRINT_PARAFASHION_TIMING
+                steady_clock::time_point post_param = steady_clock::now();
+                int param_time = duration_cast<microseconds>(post_param - pre_param).count();
+                std::cout << "Param time : " << param_time << " [µs]" << std::endl;
+#endif
+                if (success)
+                    return 0;
+                else
+                    return 1000000.0;
+            }
+
+            if (UVMode()==PMConformal)
+            {
+                vcg::tri::InitializeArapWithLSCM(m,0);
+#ifdef PRINT_PARAFASHION_TIMING
+                steady_clock::time_point post_param = steady_clock::now();
+                int param_time = duration_cast<microseconds>(post_param - pre_param).count();
+                std::cout << "Param time : " << param_time << " [µs]" << std::endl;
+#endif
+                vcg::tri::Distortion<TraceMesh,false>::SetQasDistorsion(m,vcg::tri::Distortion<TraceMesh,false>::EdgeComprStretch);
+                ScalarType A=0;
+                for (size_t i=0;i<m.face.size();i++)
+                {
+                    if (m.face[i].Q()<(MinQ()))A+=vcg::DoubleArea(m.face[i]);
+                    if (m.face[i].Q()>MaxQ())A+=vcg::DoubleArea(m.face[i]);
+                }
+                return A;
+            }
+
+            if (UVMode()==PMArap)
+            {
+                vcg::tri::InitializeArapWithLSCM(m,0);
+                //vcg::tri::OptimizeUV_ARAP(m,5,0,true);
+#ifdef PRINT_PARAFASHION_TIMING
+                steady_clock::time_point post_param = steady_clock::now();
+                int param_time = duration_cast<microseconds>(post_param - pre_param).count();
+                std::cout << "Param time : " << param_time << " [µs]" << std::endl;
+#endif
+                vcg::tri::Distortion<TraceMesh,false>::SetQasDistorsion(m,vcg::tri::Distortion<TraceMesh,false>::EdgeComprStretch);
+                ScalarType A=0;
+                for (size_t i=0;i<m.face.size();i++)
+                {
+                    if (m.face[i].Q()<(MinQ()))A+=vcg::DoubleArea(m.face[i]);
+                    if (m.face[i].Q()>MaxQ())A+=vcg::DoubleArea(m.face[i]);
+                }
+                return A;
+            }
             //vcg::tri::OptimizeUV_ARAP(m,5,0,true);
             //vcg::tri::InitializeArapWithLSCM(m,0);
             
             //evaluate the distortion
-            //vcg::tri::Distortion<TraceMesh,false>::SetQasDistorsion(m,vcg::tri::Distortion<TraceMesh,false>::EdgeComprStretch);
-            //ScalarType A=0;
-            //ScalarType SumA=0;
-            /*for (size_t i=0;i<m.face.size();i++)
-            {
-//                SumA+=vcg::DoubleArea(m.face[i]);
-//                A+=m.face[i].Q()*vcg::DoubleArea(m.face[i]);
-                if (m.face[i].Q()<(MinQ()))A+=vcg::DoubleArea(m.face[i]);
-                if (m.face[i].Q()>MaxQ())A+=vcg::DoubleArea(m.face[i]);
-            }*/
+            //            vcg::tri::Distortion<TraceMesh,false>::SetQasDistorsion(m,vcg::tri::Distortion<TraceMesh,false>::EdgeComprStretch);
+            //            ScalarType A=0;
+            //            for (size_t i=0;i<m.face.size();i++)
+            //            {
+            //                if (m.face[i].Q()<(MinQ()))A+=vcg::DoubleArea(m.face[i]);
+            //                if (m.face[i].Q()>MaxQ())A+=vcg::DoubleArea(m.face[i]);
+            //            }
             //return (A/SumA);
-#ifdef PRINT_PARAFASHION_TIMING
-            steady_clock::time_point post_param = steady_clock::now();
-            int param_time = duration_cast<microseconds>(post_param - pre_param).count();
-            std::cout << "Param time : " << param_time << " [µs]" << std::endl;
-#endif
-            if (success) return 0;
-            else return 1000000.0;
+
             //return A;
         }
     };
@@ -241,7 +502,6 @@ public:
             half_def_mesh.InitRPos();
         }
 
-
         typedef PatchTracer<TriMeshType,MeshArapQuality<TriMeshType> > PTracerType;
 
         half_def_mesh.UpdateAttributes();
@@ -259,13 +519,18 @@ public:
         PTr.away_from_singular=true;
         PTr.match_valence=match_valence;
         PTr.CClarkability=-1;
+        //PTr.FirstBorder=true;
         half_def_mesh.UpdateAttributes();
         bool PreRemoveStep=true;
+        PTr.PrioMode=PrioMode;
+        PTr.CheckUVIntersection=CheckUVIntersection;
 
         if (max_compression<max_tension)
         {
+            MeshArapQuality<TriMeshType>::UVMode()=UVMode;
             MeshArapQuality<TriMeshType>::MaxQ()=max_tension;
             MeshArapQuality<TriMeshType>::MinQ()=max_compression;
+            MeshArapQuality<TriMeshType>::RemeshOnTest()=remesh_on_test;
             PTr.check_quality_functor=check_stress;
         }
 
@@ -288,18 +553,28 @@ public:
 
         PTr.InitTracer(100,DebugMSG);
         PTr.AllowRemoveConcave=true;
+        //PTr.away_from_singular=false;
+        //PTr.AllowRemoveConcave=false;
+
+        std::vector<ScalarType> DartPriority;
+        if (use_darts)
+            GetVertPriorityByConvexity(DartPriority);
+
+        bool only_needed=true;
+        bool check_smooth_folds=false;
 
         if ((!use_darts)&&(!allow_self_glue))
-            RecursiveProcess<PTracerType>(PTr,100,true,true,PreRemoveStep,false,false,false,DebugMSG);
+            RecursiveProcess<PTracerType>(PTr,100,only_needed,true,PreRemoveStep,false,false,check_smooth_folds,SmoothBeforeRemove,DebugMSG);
 
         if ((use_darts)&&(!allow_self_glue))
-            RecursiveProcessWithDarts<PTracerType>(PTr,100,true,true,PreRemoveStep,false,false,false,DebugMSG);
+            RecursiveProcessWithDarts<PTracerType>(PTr,100,only_needed,true,PreRemoveStep,false,false,check_smooth_folds,DartPriority,SmoothBeforeRemove,DebugMSG);
 
         if ((!use_darts)&&(allow_self_glue))
-            RecursiveProcessForTexturing<PTracerType>(PTr,100,true,true,PreRemoveStep,false,false,false,DebugMSG);
+            RecursiveProcessForTexturing<PTracerType>(PTr,100,only_needed,true,PreRemoveStep,false,false,check_smooth_folds,SmoothBeforeRemove,DebugMSG);
 
         if ((use_darts)&&(allow_self_glue))
-            RecursiveProcessForTexturingWithDarts<PTracerType>(PTr,100,true,true,PreRemoveStep,false,false,false,DebugMSG);
+            RecursiveProcessForTexturingWithDarts<PTracerType>(PTr,100,only_needed,true,PreRemoveStep,false,false,check_smooth_folds,DartPriority,SmoothBeforeRemove,DebugMSG);
+        //RecursiveProcessForTexturingWithDarts<PTracerType>(PTr,100,true,false,false,false,false,false,DebugMSG);
 
 
         //be sure to have selected all the paths
@@ -353,6 +628,11 @@ public:
 
 
         Symmetrizer<TriMeshType> Symm(deformed_mesh,reference_mesh);
+
+//        //THEN REMOVE IF THEY ARE SOFT
+//        vcg::tri::UpdateFlags<TriMeshType>::FaceClearFaceEdgeS(half_def_mesh);
+//        half_def_mesh.UpdateSharpFeaturesFromSelection();
+
         PreProcessMesh(half_def_mesh,false);
         Symm.CopyFromHalfDefMesh(half_def_mesh);
 
@@ -413,7 +693,7 @@ public:
 
     void DoParametrize()
     {
-        Parametrizer<TriMeshType>::Parametrize(deformed_mesh,param_boundary);
+        Parametrizer<TriMeshType>::Parametrize(deformed_mesh,UVMode,param_boundary);
         //parametrized=true;
     }
 
@@ -515,7 +795,7 @@ public:
         PTracerType PTr(VGraph);
 
         PTr.CClarkability=-1;
-        PTr.match_valence=false;
+        PTr.match_valence=match_valence;
 
         if (allow_self_glue || use_darts)
         {
@@ -532,6 +812,7 @@ public:
         {
             MeshArapQuality<TriMeshType>::MaxQ()=max_tension;
             MeshArapQuality<TriMeshType>::MinQ()=max_compression;
+            MeshArapQuality<TriMeshType>::RemeshOnTest()=remesh_on_test;
             PTr.check_quality_functor=check_stress;
         }
 
@@ -552,7 +833,10 @@ public:
         PTr.ReinitPathFromEdgeSel();
 
         if (use_darts)
-            PTr.SplitIntoIntervals();
+        {
+            PTr.SplitIntoSubPaths();
+            PTr.SplitIntoIntervals(PTr.ChoosenPaths);
+        }
 
         //then set only removeable the ones that are on symmetry line
         PTr.SetAllUnRemoveable();
@@ -574,16 +858,81 @@ public:
         SelectMeshPatchBorders(VGraph,PTr.ChoosenPaths);
     }
 
+    void GetVertPriorityByConvexity(std::vector<ScalarType> &Values)
+    {
+        Values.clear();
+
+        Eigen::MatrixXi F;
+        typename vcg::tri::MeshToMatrix<TriMeshType>::MatrixXm Vf;
+
+        Eigen::MatrixXd PD1,PD2,PV1,PV2;
+        vcg::tri::MeshToMatrix<TriMeshType>::GetTriMeshData(half_def_mesh,F,Vf);
+        Eigen::MatrixXd V = Vf.template cast<double>();
+
+        igl::principal_curvature(V,F,PD1,PD2,PV1,PV2,4,true);
+
+        //then compute convexity
+        for (size_t i=0;i<half_def_mesh.vert.size();i++)
+        {
+            ScalarType V0=PV1(i,0);
+            ScalarType V1=PV2(i,0);
+
+            ScalarType Curv=V0*V1;
+
+            Values.push_back(Curv);
+        }
+    }
+
+    void ColorByConvexity()
+    {
+        std::vector<ScalarType> Values;
+        GetVertPriorityByConvexity(Values);
+
+        //then compute convexity
+        std::vector<std::pair<ScalarType,size_t> > val;
+
+        for (size_t i=0;i<half_def_mesh.vert.size();i++)
+        {
+            val.push_back(std::pair<ScalarType,size_t>(Values[i],i));
+        }
+        std::sort(val.begin(),val.end());
+//        size_t minI=val.size()*0.2;
+//        size_t maxI=val.size()*0.8;
+//        ScalarType minV=val[minI];
+//        ScalarType maxV=val[maxI];
+//        for (size_t i=0;i<deformed_mesh.vert.size();i++)
+//        {
+//            std::max(deformed_mesh.vert[i].Q(),minV);
+//            std::min(deformed_mesh.vert[i].Q(),maxV);
+//        }
+        for (size_t i=0;i<val.size();i++)
+        {
+            half_def_mesh.vert[val[i].second].Q()=i;
+        }
+        //vcg::tri::UpdateQuality<TriMeshType>::Ve
+        vcg::tri::UpdateColor<TriMeshType>::PerVertexQualityRamp(half_def_mesh);
+        vcg::tri::io::ExporterPLY<TriMeshType>::Save(half_def_mesh,"TestCol.ply",vcg::tri::io::Mask::IOM_VERTCOLOR);
+    }
+
     void BatchProcess(const std::vector<std::vector<CoordType> > &PickedPoints,
+                      //const std::vector<bool > &Soft,
                       bool writeDebug=false,
                       bool writeTime=true)
     {
         RestoreInitMesh();
         size_t t0=clock();
+
         MakeMeshSymmetric(PickedPoints,false);
+
+//        vcg::tri::io::ExporterPLY<TriMeshType>::Save(half_def_mesh,"dede0ply");
+
         size_t t1=clock();
         ComputeField(false);
         size_t t2=clock();
+//        //TEST, REMOVE CONSTRAINT
+//        vcg::tri::io::ExporterPLY<TriMeshType>::Save(half_def_mesh,"dede1.ply");
+//        //TEST, REMOVE CONSTRAINTS
+
         TracePatch(false,writeDebug);
 
         if (remove_along_symmetry)
@@ -604,12 +953,13 @@ public:
     Parafashion(TriMeshType &_deformed_mesh,
                 TriMeshType &_reference_mesh,
                 AnimationManager<TriMeshType> &_AManag):
-                deformed_mesh(_deformed_mesh),
-                reference_mesh(_reference_mesh),
-                AManag(_AManag)
+        deformed_mesh(_deformed_mesh),
+        reference_mesh(_reference_mesh),
+        AManag(_AManag)
     {
-        PMode=PMMinTJuncions;
+        PMode=PMAvgTJuncions;
         FMode=FMCurvature;
+        PrioMode=PrioModBlend;
         match_valence=false;
         check_stress=true;
         param_boundary=0.03;
@@ -619,6 +969,10 @@ public:
         use_darts=true;
         allow_self_glue=true;
         remove_along_symmetry=false;
+        remesh_on_test=false;
+        UVMode=PMCloth;
+        CheckUVIntersection=true;
+        SmoothBeforeRemove=true;
     }
 };
 
