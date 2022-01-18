@@ -34,7 +34,7 @@ ClothParam::ClothParam(const Eigen::MatrixXd& V_3d, const Eigen::MatrixXi& F,
         V_2d_ = paramSCAF(V_3d_, F_, bnd_);
     }
 
-    V_2d_ *= (V_3d_.col(0).maxCoeff() - V_3d_.col(0).minCoeff()) / (V_2d_.col(0).maxCoeff() - V_2d_.col(0).minCoeff());
+    //V_2d_ *= (V_3d_.col(0).maxCoeff() - V_3d_.col(0).minCoeff()) / (V_2d_.col(0).maxCoeff() - V_2d_.col(0).minCoeff()); // doesn't work because axes are not the same!
     /*if (checkSelfIntersect()){
         //std::cout << "Self intersecting at init" << std::endl;
         // do something ?

@@ -182,7 +182,7 @@ Eigen::MatrixXd paramLSCM(const Eigen::MatrixXd& V_3d, const Eigen::MatrixXi& F,
 }
 
 // SCAF
-#include <igl/triangle/scaf.h>
+/*#include <igl/triangle/scaf.h>
 #include <igl/arap.h>
 #include <igl/boundary_loop.h>
 #include <igl/harmonic.h>
@@ -191,10 +191,11 @@ Eigen::MatrixXd paramLSCM(const Eigen::MatrixXd& V_3d, const Eigen::MatrixXi& F,
 #include <igl/doublearea.h>
 #include <igl/PI.h>
 #include <igl/flipped_triangles.h>
-#include <igl/topological_hole_fill.h>
+#include <igl/topological_hole_fill.h>*/
 
 Eigen::MatrixXd paramSCAF(const Eigen::MatrixXd& V_3d, const Eigen::MatrixXi& F, const Eigen::VectorXi& bnd){
-
+    return V_3d;
+    /*
     int scaf_iterations = 10;
 
     Eigen::MatrixXd bnd_uv, uv_init;
@@ -208,7 +209,7 @@ Eigen::MatrixXd paramSCAF(const Eigen::MatrixXd& V_3d, const Eigen::MatrixXi& F,
     // Heuristic primary boundary choice: longest
     auto primary_bnd = std::max_element(all_bnds.begin(), all_bnds.end(), [](const std::vector<int> &a, const std::vector<int> &b) { return a.size()<b.size(); });
 
-    Eigen::VectorXi bnd = Eigen::Map<Eigen::VectorXi>(primary_bnd->data(), primary_bnd->size());*/
+    Eigen::VectorXi bnd = Eigen::Map<Eigen::VectorXi>(primary_bnd->data(), primary_bnd->size());
 
     igl::map_vertices_to_circle(V_3d, bnd, bnd_uv);
     bnd_uv *= sqrt(M.sum() / (2 * igl::PI));
@@ -241,7 +242,7 @@ Eigen::MatrixXd paramSCAF(const Eigen::MatrixXd& V_3d, const Eigen::MatrixXi& F,
     Eigen::MatrixXd V_2db = Eigen::MatrixXd::Zero(V_3d.rows(), 3);
     V_2db.col(0) = V_2d.col(0);
     V_2db.col(1) = V_2d.col(1);
-    return V_2d;
+    return V_2d;*/
 }
 
 
