@@ -194,23 +194,22 @@ Eigen::MatrixXd paramLSCM(const Eigen::MatrixXd& V_3d, const Eigen::MatrixXi& F,
 #include <igl/topological_hole_fill.h>*/
 
 Eigen::MatrixXd paramSCAF(const Eigen::MatrixXd& V_3d, const Eigen::MatrixXi& F, const Eigen::VectorXi& bnd){
-    return V_3d;
-    /*
-    int scaf_iterations = 10;
+
+    /*int scaf_iterations = 10;
 
     Eigen::MatrixXd bnd_uv, uv_init;
     igl::triangle::SCAFData scaf_data;
 
     Eigen::VectorXd M;
-    igl::doublearea(V_3d, F, M);
+    igl::doublearea(V_3d, F, M);*/
     
     /*std::vector<std::vector<int>> all_bnds;
     igl::boundary_loop(F, all_bnds);
     // Heuristic primary boundary choice: longest
     auto primary_bnd = std::max_element(all_bnds.begin(), all_bnds.end(), [](const std::vector<int> &a, const std::vector<int> &b) { return a.size()<b.size(); });
 
-    Eigen::VectorXi bnd = Eigen::Map<Eigen::VectorXi>(primary_bnd->data(), primary_bnd->size());
-
+    Eigen::VectorXi bnd = Eigen::Map<Eigen::VectorXi>(primary_bnd->data(), primary_bnd->size());*/
+    /*
     igl::map_vertices_to_circle(V_3d, bnd, bnd_uv);
     bnd_uv *= sqrt(M.sum() / (2 * igl::PI));
 
@@ -243,6 +242,8 @@ Eigen::MatrixXd paramSCAF(const Eigen::MatrixXd& V_3d, const Eigen::MatrixXi& F,
     V_2db.col(0) = V_2d.col(0);
     V_2db.col(1) = V_2d.col(1);
     return V_2d;*/
+    std::cout << "ERROR SCAF DISABLED" << std::endl;
+    return V_3d;
 }
 
 

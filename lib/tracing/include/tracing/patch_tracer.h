@@ -4643,16 +4643,15 @@ public:
 
     void TraceBorderAndLoops(bool UsePartitionNeeds)
     {
-        std::cout<<"hi from TraceBorderAndLoops"<<std::endl;
         InitCandidates(TVInternal,TVInternal,TraceLoop);
-        std::cout<<"TEST 0 There are "<<Candidates.size()<<"candidates"<<std::endl;
+        //std::cout<<"TEST 0 There are "<<Candidates.size()<<"candidates"<<std::endl;
 
         InitCandidates(TVFlat,TVFlat,TraceDirect);
-        std::cout<<"TEST 1 There are "<<Candidates.size()<<"candidates"<<std::endl;
+        //std::cout<<"TEST 1 There are "<<Candidates.size()<<"candidates"<<std::endl;
 
         ChooseGreedyByDistance(false,UsePartitionNeeds);
 
-        std::cout<<"Choosen "<<ChoosenPaths.size()<<"candidates"<<std::endl;
+        //std::cout<<"Choosen "<<ChoosenPaths.size()<<"candidates"<<std::endl;
     }
 
     size_t TraceLoops(bool UsePartitionNeeds)
@@ -5220,7 +5219,6 @@ public:
         if (PrioMode==PrioModBlend)
         {
             TraceBorderAndLoops(AddOnlyNeeded);
-            std::cout<<"TraceBorderAndLoops done"<<std::endl;
 
             if (DebugMsg)
                 std::cout<<"done"<<std::endl;
@@ -5230,7 +5228,6 @@ public:
 
         }
 
-        std::cout<<"ok1"<<std::endl;
         //restore the setup
         if (ForceReceivers && force_always)
         {
@@ -5239,8 +5236,6 @@ public:
         }
         //        if (FinalRemoval)
         //            BatchRemoval();//SmoothOnRemoval);
-
-        std::cout<<"ok2"<<std::endl;
     }
 
 

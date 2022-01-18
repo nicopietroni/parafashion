@@ -145,11 +145,8 @@ void BaryOptimizer::equationsFromTriangle(const Eigen::MatrixXd& V_2d, const Eig
     std::cout << "bary centroid: " << barycentricCoords(D, V_tri_2d.row(0), V_tri_2d.row(1), V_tri_2d.row(2)) << std::endl;
     std::cout << "bary DU: " << DU_bary << std::endl;
     std::cout << "bary DV: " << DV_bary << std::endl;
-    std::cout << "bary DUV: " << DUV_bary << std::endl;
     std::cout << "target_u: " << target_u << std::endl;
     std::cout << "target_v: " << target_v << std::endl;
-    std::cout << "target_uv_u: " << target_uv_u << std::endl;
-    std::cout << "target_uv_v: " << target_uv_v << std::endl;
     #endif
 
     if (enable_stretch_eqs_){

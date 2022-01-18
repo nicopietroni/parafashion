@@ -1,4 +1,5 @@
 #include "param/cloth_param.h"
+#include <igl/avg_edge_length.h>
 #include "param/self_intersect.h"
 
 //#define DEBUG_CLOTH_PARAM
@@ -34,7 +35,12 @@ ClothParam::ClothParam(const Eigen::MatrixXd& V_3d, const Eigen::MatrixXi& F,
         V_2d_ = paramSCAF(V_3d_, F_, bnd_);
     }
 
-    //V_2d_ *= (V_3d_.col(0).maxCoeff() - V_3d_.col(0).minCoeff()) / (V_2d_.col(0).maxCoeff() - V_2d_.col(0).minCoeff()); // doesn't work because axes are not the same!
+    bool rescale_init = true;
+    if (rescale_init){
+        //V_2d_ *= (V_3d_.col(0).maxCoeff() - V_3d_.col(0).minCoeff()) / (V_2d_.col(0).maxCoeff() - V_2d_.col(0).minCoeff()); // doesn't work because axes are not the same!
+        V_2d_ *= igl::avg_edge_length(V_3d_, F_) / igl::avg_edge_length(V_2d_, F_);
+    }
+
     /*if (checkSelfIntersect()){
         //std::cout << "Self intersecting at init" << std::endl;
         // do something ?
@@ -60,7 +66,7 @@ void ClothParam::paramIter(int n_iter){
 
 bool ClothParam::paramAttempt(int max_iter){
     if (!topology_ok) {
-        std::cout << "Topology check failed, aborting parameterizion" << std::endl;
+        std::cout << "Topology check failed, aborting parameterization" << std::endl;
         V_2d_ = Eigen::MatrixXd::Zero(V_3d_.rows(), 3);
         stretch_u_ = Eigen::VectorXd::Constant(F_.rows(), 100.0);
         stretch_v_ = Eigen::VectorXd::Constant(F_.rows(), 100.0);
@@ -85,10 +91,12 @@ bool ClothParam::paramAttempt(int max_iter){
         }
         V_2d_ = bo_.localGlobal(V_2d_, V_3d_, F_);
         
-        if (checkSelfIntersect()){
-            // interrupt process early
-            // note: we do this after one iteration so we don't punish bad initialization
-            return false;
+        if (enable_intersection_check_){
+            if (checkSelfIntersect()){
+                // interrupt process early
+                // note: we do this after one iteration so we don't punish bad initialization
+                return false;
+            }
         }
     }
     return constraintSatisfied();
