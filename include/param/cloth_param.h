@@ -19,7 +19,7 @@ public:
                double max_stretch = 0.05,
                const std::vector<std::vector<std::pair<int, int>>>& dart_duplicates = {},
                const std::vector<int>& dart_tips = {},
-               CLOTH_INIT_TYPE = CLOTH_INIT_ARAP);
+               CLOTH_INIT_TYPE = CLOTH_INIT_LSCM);
 
     // Tries to parameterize. Returns whether max_stretch 
     // was satisfied within max number of iterations,
@@ -31,9 +31,6 @@ public:
     // Tries to align V axis in parameterization with
     // direction v1 -> v2 
     void setAlignmentVertexPair(int v1_id, int v2_id);
-
-    // Seams
-    // TODO decide: do it in order of patch tracing, or do it in the end?
 
     bool checkSelfIntersect() const;
 
@@ -51,7 +48,7 @@ public:
 
     Eigen::MatrixXd getV2d(){return V_2d_;}
 
-    bool constraintSatisfied(){
+    bool constraintSatisfied() const {
         if (stretch_u_.rows() < 1) return false;
         return stretch_u_.minCoeff() > -max_stretch_ 
             && stretch_u_.maxCoeff() < max_stretch_ 
@@ -60,6 +57,9 @@ public:
     };
 
     bool topology_ok = true;
+
+    void disableIntersectionCheck(){enable_intersection_check_ = false;};
+    void enableIntersectionCheck(){enable_intersection_check_ = true;};
 
 private:
     // Set during init
@@ -73,6 +73,9 @@ private:
     BaryOptimizer bo_;
 
     Eigen::VectorXd stretch_u_, stretch_v_;
+
+    // config
+    bool enable_intersection_check_ = true;
 
     // Sets pairs of vertex ids which should be symmetrical in a given dart.
     // first indexing: dart id
