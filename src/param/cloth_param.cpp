@@ -13,8 +13,9 @@ ClothParam::ClothParam(const Eigen::MatrixXd& V_3d, const Eigen::MatrixXi& F,
                        double max_stretch,
                        const std::vector<std::vector<std::pair<int, int>>>& dart_duplicates,
                        const std::vector<int>& dart_tips,
+                       int seam_size,
                        CLOTH_INIT_TYPE init_type)
-            : F_(F), V_3d_(V_3d), max_stretch_(max_stretch), init_type_(init_type){
+            : F_(F), V_3d_(V_3d), max_stretch_(max_stretch), seam_size_(seam_size), init_type_(init_type){
     
     igl::boundary_loop(F, bnd_);
 
@@ -46,6 +47,7 @@ ClothParam::ClothParam(const Eigen::MatrixXd& V_3d, const Eigen::MatrixXi& F,
         // do something ?
     }*/
     setDartPairs(dart_duplicates, dart_tips);
+    bo_.setSeamSize(seam_size_);
     bo_.allocateMemory(F.rows(), V_3d.rows());
     //bo_.measureScore(V_2d_, V_3d_, F_, stretch_u_, stretch_v_);
     
@@ -86,9 +88,9 @@ bool ClothParam::paramAttempt(int max_iter){
         }
         #endif
 
-        if (constraintSatisfied()){
+        /*if (constraintSatisfied()){
             return true;
-        }
+        }*/
         V_2d_ = bo_.localGlobal(V_2d_, V_3d_, F_);
         
         if (enable_intersection_check_){

@@ -5,6 +5,8 @@
 
 #include "param/cloth_param.h"
 
+//#define MULTI_PARAM_DEBUG
+
 struct Seam {
     int patch1_id;
     int patch2_id;
@@ -15,6 +17,43 @@ struct Seam {
     // (ordering of pairs not necessary)
     // (it is possible that patch1_id == patch2_id)
 };
+
+void computeTargetPositions(const std::vector<std::unique_ptr<ClothParam>>& cloth_ps, 
+                            const Seam& seam,
+                            Eigen::MatrixXd& targets_p,
+                            Eigen::MatrixXd& targets_q){
+    int patch1 = seam.patch1_id; 
+    int patch2 = seam.patch2_id;
+    Eigen::MatrixXd V1 = cloth_ps[patch1]->getV2d();
+    Eigen::MatrixXd V2 = cloth_ps[patch2]->getV2d();
+
+    Eigen::MatrixXd points_p(seam.corres.size(), 2);
+    Eigen::MatrixXd points_q(seam.corres.size(), 2);
+
+    for (int i=0; i<seam.corres.size(); i++){
+        points_p.row(i) = V1.row(seam.corres[i].first).leftCols(2);
+        points_q.row(i) = V2.row(seam.corres[i].second).leftCols(2);
+    }
+
+    Eigen::MatrixXd R_est;
+    Eigen::VectorXd T_est;
+    procustes(points_p.leftCols(2), points_q.leftCols(2), R_est, T_est);
+
+    Eigen::MatrixXd points_pt = points_p.transpose();
+    Eigen::MatrixXd points_qt = points_q.transpose();
+
+    Eigen::MatrixXd points_qpt = points_qt.colwise() - T_est;
+    points_qpt = (R_est.transpose() * points_qpt);
+
+    Eigen::MatrixXd points_ppt = (R_est * points_pt);
+    points_ppt = points_ppt.colwise() + T_est;
+
+    Eigen::MatrixXd points_pp = points_ppt.transpose();
+    Eigen::MatrixXd points_qp = points_qpt.transpose(); 
+
+    targets_p = (points_qp + points_p) / 2;
+    targets_q = (points_pp + points_q) / 2;
+}
 
 // note: this doesn't take care of packing! All patches are
 // more or less centered around (0,0)
@@ -31,12 +70,23 @@ bool finalParamMultiPatch(const std::vector<Eigen::MatrixXd>& vec_V_3d,
         std::cout << "ERROR: non matching sizes in final param" << std::endl;
     }
 
+    Eigen::VectorXi per_patch_seam_size = Eigen::VectorXi::Zero(n_patches); 
+    for (Seam seam: seams){
+        per_patch_seam_size[seam.patch1_id] += seam.corres.size();
+        per_patch_seam_size[seam.patch2_id] += seam.corres.size();
+    }
+
+    #ifdef MULTI_PARAM_DEBUG
+    std::cout << "per_patch_seam_size "<< per_patch_seam_size << std::endl; 
+    #endif
+
     std::vector<std::unique_ptr<ClothParam>> cloth_ps;
     for (int patch_id=0; patch_id<n_patches; patch_id++){
         std::unique_ptr<ClothParam> ptr(new ClothParam(vec_V_3d[patch_id], 
                            vec_F[patch_id], 0.0, 
                            vec_dart_duplicates[patch_id], 
                            vec_dart_tips[patch_id],
+                           per_patch_seam_size[patch_id],
                            init_type));
         cloth_ps.push_back(std::move(ptr));
     }
@@ -44,22 +94,51 @@ bool finalParamMultiPatch(const std::vector<Eigen::MatrixXd>& vec_V_3d,
     int max_iter = 20;
     for (int current_iter = 0; current_iter < max_iter; current_iter++){
 
-        // TODO update seam info here ("local" step)
+        // first index is a patch, second is each of its seam in an arbitrary order
+        std::vector<std::vector<Eigen::MatrixXd>> targets;
+        std::vector<std::vector<Eigen::VectorXi>> v_ids;
+        targets.resize(cloth_ps.size());
+        v_ids.resize(cloth_ps.size());
+
+        for (int seam = 0; seam < seams.size(); seam ++){
+            #ifdef MULTI_PARAM_DEBUG
+            std::cout << "seam: "<< seam << std::endl; 
+            #endif
+            Eigen::MatrixXd targets_p;
+            Eigen::MatrixXd targets_q;
+            computeTargetPositions(cloth_ps, seams[seam], targets_p, targets_q);
+
+            int n_pairs = seams[seam].corres.size();
+            Eigen::VectorXi p_ids(n_pairs), q_ids(n_pairs);
+
+            for (int i=0; i<n_pairs; i++){
+                p_ids(i) = seams[seam].corres[i].first;
+                q_ids(i) = seams[seam].corres[i].second;
+            }
+
+            targets[seams[seam].patch1_id].push_back(targets_p);
+            v_ids[seams[seam].patch1_id].push_back(p_ids);
+
+            targets[seams[seam].patch2_id].push_back(targets_q);
+            v_ids[seams[seam].patch2_id].push_back(q_ids);
+
+            //cloth_ps[seams[seam].patch1_id]->setSeamTargets(targets_p, p_ids);
+            //cloth_ps[seams[seam].patch2_id]->setSeamTargets(targets_q, q_ids);
+        }
+
+        #ifdef MULTI_PARAM_DEBUG
+        std::cout << "targets.size() "<< targets.size() << std::endl; 
+        #endif
+
+        for (int patch_id=0; patch_id < cloth_ps.size(); patch_id ++){
+            cloth_ps[patch_id]->setSeamTargets(targets[patch_id], v_ids[patch_id]);
+        }
 
         for (int patch_id=0; patch_id<n_patches; patch_id++){
-
-            cloth_ps[patch_id]->paramIter(1);
-
-            #ifdef DEBUG_CLOTH_PARAM
-            if (stretch_u_.maxCoeff() < -0.5){ // not really supposed to happen if the initialization is ok
-                igl::writeOBJ("../data/buggy/final_not_good.obj", V_3d_, F_);
-                igl::writeOBJ("../data/buggy/final_not_good_uv.obj", V_2d_, F_);
-            }
-            if (std::isnan(stretch_u_.maxCoeff())){ // not really supposed to happen if the initialization is ok
-                igl::writeOBJ("../data/buggy/final_nanned.obj", V_3d_, F_);
-                igl::writeOBJ("../data/buggy/final_nanned_uv.obj", V_2d_, F_);
-            }
+            #ifdef MULTI_PARAM_DEBUG
+            std::cout << "patch_id "<< patch_id << std::endl; 
             #endif
+            cloth_ps[patch_id]->paramIter(1);
         }
     }
 
@@ -73,7 +152,25 @@ bool finalParamMultiPatch(const std::vector<Eigen::MatrixXd>& vec_V_3d,
         }
     }
 
+    // force seam reflectability in final solution (debug)
+    bool force_reflectability = false;
+    if (force_reflectability){
+        for (int seam = 0; seam < seams.size(); seam ++){ 
+            Eigen::MatrixXd targets_p, targets_q;
+            computeTargetPositions(cloth_ps, seams[seam], targets_p, targets_q);
 
-    std::cout << "TODO finalParamMultiPatch" << std::endl;
+            int patch1 = seams[seam].patch1_id;
+            int patch2 = seams[seam].patch2_id;
+            for (int i=0; i<seams[seam].corres.size(); i++){
+                vec_V_2d[patch1](seams[seam].corres[i].first, 0) = targets_p(i,0);
+                vec_V_2d[patch1](seams[seam].corres[i].first, 1) = targets_p(i,1);
+                vec_V_2d[patch1](seams[seam].corres[i].first, 2) = 0;
+                vec_V_2d[patch2](seams[seam].corres[i].second, 0) = targets_q(i,0);
+                vec_V_2d[patch2](seams[seam].corres[i].second, 1) = targets_q(i,1);
+                vec_V_2d[patch2](seams[seam].corres[i].second, 2) = 0;
+            }
+        }
+    }
+
     return all_satisfied;
 }

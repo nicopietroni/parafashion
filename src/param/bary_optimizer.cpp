@@ -96,6 +96,11 @@ void BaryOptimizer::allocateMemory(int n_faces, int n_vs){
         #endif
     }
 
+    if (enable_seam_eqs_){
+        n_equations_ += seam_size_ * 2;
+        n_triplets_ += seam_size_ * 2;
+    }
+
     if (enable_tri_align_eqs_){
         n_equations_ += n_faces;
         n_triplets_ += 3 * n_faces;
@@ -454,6 +459,29 @@ void BaryOptimizer::makeSparseMatrix(const Eigen::MatrixXd& V_2d, const Eigen::M
 
     if (enable_dart_sym_eqs_){
         equationsFromDarts(V_2d, F);
+    }
+
+    if (enable_seam_eqs_ && seam_size_ > 0){
+        for (int seam_id = 0; seam_id < targets_p_seams_.size(); seam_id ++){
+            Eigen::MatrixXd targets = targets_p_seams_[seam_id];
+            Eigen::VectorXi p_ids = p_ids_seams_[seam_id];
+            #ifdef LOCALGLOBAL_DEBUG
+            std::cout << "seam_id " << seam_id << std::endl;
+            std::cout << "targets " << targets << std::endl;
+            std::cout << "p_ids " << p_ids << std::endl;
+            #endif
+            for (int i = 0; i < targets.rows(); i++){
+                triplet_list.push_back(Eigen::Triplet<double>(next_equation_id_, 2 * p_ids(i), 1.0));
+                b(next_equation_id_) = targets(i, 0);
+                W.diagonal()[next_equation_id_] = seam_coeff_;
+                next_equation_id_ ++;
+
+                triplet_list.push_back(Eigen::Triplet<double>(next_equation_id_, 2 * p_ids(i) + 1, 1.0));
+                b(next_equation_id_) = targets(i, 1);
+                W.diagonal()[next_equation_id_] = seam_coeff_;
+                next_equation_id_ ++;
+            }
+        }
     }
 
     #ifdef LOCALGLOBAL_DEBUG

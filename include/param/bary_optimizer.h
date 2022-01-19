@@ -55,6 +55,10 @@ public:
     bool enable_dart_sym_eqs_ = true;
     double dart_sym_coeff_ = 1.0;
 
+    // Match target positions for seams
+    bool enable_seam_eqs_ = true;
+    double seam_coeff_ = 10.0;
+
     // this one doesn't do what it's supposed to
     bool enable_angle_eqs_ = false;
     double angle_coeff_ = 0.7;
@@ -68,6 +72,15 @@ public:
     void setUnorderedDarts(const std::vector<std::vector<std::pair<int, int>>>& dart_duplicates,
                            const std::vector<int>& dart_tips);
 
+    void setSeamSize(int seam_size) {
+        seam_size_ = seam_size;
+    }
+    void setSeamTargets(const std::vector<Eigen::MatrixXd>& targets_p,
+                        const std::vector<Eigen::VectorXi>& p_ids){
+        targets_p_seams_ = targets_p;
+        p_ids_seams_ = p_ids;
+    }
+
 private:
 
     int next_equation_id_ = 0;
@@ -76,6 +89,7 @@ private:
     std::vector<int> selected_vs_;
     //std::vector<SimpleDart> simple_darts_;
     std::vector<UnorderedDart> unordered_darts_;
+    int seam_size_;
     
     Eigen::SparseMatrix<double> A;
     Eigen::VectorXd b;
@@ -83,6 +97,9 @@ private:
     DiagonalMatrixXd W; 
     Eigen::MatrixXd V_tri_2d;
     Eigen::MatrixXd V_tri_3d;
+
+    std::vector<Eigen::MatrixXd> targets_p_seams_;
+    std::vector<Eigen::VectorXi> p_ids_seams_;
 
     Eigen::SimplicialLDLT<Eigen::SparseMatrix<double>> solver;
     std::vector<Eigen::Triplet<double>> triplet_list; 

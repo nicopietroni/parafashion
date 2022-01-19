@@ -19,6 +19,7 @@ public:
                double max_stretch = 0.05,
                const std::vector<std::vector<std::pair<int, int>>>& dart_duplicates = {},
                const std::vector<int>& dart_tips = {},
+               int seam_size = 0,
                CLOTH_INIT_TYPE = CLOTH_INIT_LSCM);
 
     // Tries to parameterize. Returns whether max_stretch 
@@ -33,6 +34,11 @@ public:
     void setAlignmentVertexPair(int v1_id, int v2_id);
 
     bool checkSelfIntersect() const;
+
+    void setSeamTargets(const std::vector<Eigen::MatrixXd>& targets_p,
+                        const std::vector<Eigen::VectorXi>& p_ids){
+        bo_.setSeamTargets(targets_p, p_ids);
+    }
 
     // ----- MISC. ----- //
 
@@ -66,6 +72,7 @@ private:
     const Eigen::MatrixXd V_3d_;
     const Eigen::MatrixXi F_;
     const double max_stretch_;
+    int seam_size_;
     CLOTH_INIT_TYPE init_type_;
 
     Eigen::VectorXi bnd_;
