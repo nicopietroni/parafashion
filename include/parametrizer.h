@@ -9,7 +9,7 @@
 #include <tracing/patch_manager.h>
 #include <vcg/complex/algorithms/mesh_to_matrix.h>
 #include <param/cloth_param.h>
-
+#include <param/multi_patch_param.h>
 
 enum ParamMode{PMConformal,PMArap,PMCloth};
 
@@ -33,7 +33,8 @@ template <class TriMeshType>
 bool ClothParametrize(TriMeshType &mesh,
                       //                      std::vector<typename TriMeshType::ScalarType> &StretchU,
                       //                      std::vector<typename TriMeshType::ScalarType> &StretchV,
-                      typename TriMeshType::ScalarType error)
+                      typename TriMeshType::ScalarType error,
+                      bool SelfIntCheck)
 {
     Eigen::MatrixXd V;
     Eigen::MatrixXi F;
@@ -41,6 +42,12 @@ bool ClothParametrize(TriMeshType &mesh,
     vcg::tri::MeshToMatrix<TriMeshType>::GetTriMeshData(mesh, F, V);
     
     ClothParam cloth(V, F, error);
+
+    if (SelfIntCheck)
+        cloth.enableIntersectionCheck();
+    else
+        cloth.disableIntersectionCheck();
+
     bool success = cloth.paramAttempt();
     
     if (!success) {
@@ -483,27 +490,101 @@ public:
                             ScalarType BorderPatch=0)
     {
         MergeAcrossBoundarySeams(mesh);
-//        std::vector<TriMeshType*> SubMeshes;
+        //        std::vector<TriMeshType*> SubMeshes;
         std::vector<std::pair<int,int> > OriginalToSub;
-//        std::vector<std::pair<int,int> > MeshToMesh;
-//        std::vector<std::vector<std::pair<int,int> > > VertToVert;
-//        std::vector<int> DartTipVert;
+        //        std::vector<std::pair<int,int> > MeshToMesh;
+        //        std::vector<std::vector<std::pair<int,int> > > VertToVert;
+        //        std::vector<int> DartTipVert;
         SplitForGlobalParam(mesh,SubMeshes,OriginalToSub,MeshToMesh,VertToVert,DartTipVert);
 
         ScalarType A=0;
-        for (size_t i=0;i<SubMeshes.size();i++)
+        if (UVMode==PMConformal)
         {
-            (*SubMeshes[i]).UpdateAttributes();
-
-            if (UVMode==PMConformal)
+            for (size_t i=0;i<SubMeshes.size();i++)
+            {
+                (*SubMeshes[i]).UpdateAttributes();
                 vcg::tri::InitializeArapWithLSCM((*SubMeshes[i]),0);
-            if (UVMode==PMArap)
+                A+=vcg::tri::UV_Utils<TriMeshType>::PerVertUVArea(*SubMeshes[i]);
+            }
+        }
+
+        if (UVMode==PMArap)
+        {
+            for (size_t i=0;i<SubMeshes.size();i++)
+            {
+                (*SubMeshes[i]).UpdateAttributes();
                 vcg::tri::OptimizeUV_ARAP((*SubMeshes[i]),100,0,true);
-            if (UVMode==PMCloth)
-                ClothParametrize<TriMeshType>((*SubMeshes[i]),0.0);
+                A+=vcg::tri::UV_Utils<TriMeshType>::PerVertUVArea(*SubMeshes[i]);
+            }
+        }
 
-            A=vcg::tri::UV_Utils<TriMeshType>::PerVertUVArea(*SubMeshes[i]);
+        if (UVMode==PMCloth)
+        {
+            //            for (size_t i=0;i<SubMeshes.size();i++)
+            //            {
+            //                (*SubMeshes[i]).UpdateAttributes();
+            //                ClothParametrize<TriMeshType>((*SubMeshes[i]),0.0,false);
+            //                A+=vcg::tri::UV_Utils<TriMeshType>::PerVertUVArea(*SubMeshes[i]);
+            //            }
 
+            //ge the seams
+            //std::cout<<"0"<<std::endl;
+
+            std::vector<Seam> seams;
+
+            std::vector<std::vector<int> > vec_dart_tips;
+            vec_dart_tips.resize(SubMeshes.size());
+            std::vector<std::vector<std::vector<std::pair<int, int>>>> vec_dart_duplicates;
+            vec_dart_duplicates.resize(SubMeshes.size());
+
+            //std::cout<<"1"<<std::endl;
+
+            for (size_t i=0;i<MeshToMesh.size();i++)
+            {
+                if (DartTipVert[i]!=-1)//in this case is a dart
+                {
+                    int IndexM0=MeshToMesh[i].first;
+                    int IndexM1=MeshToMesh[i].second;
+                    assert(IndexM0==IndexM1);
+                    size_t IndexTip=DartTipVert[i];
+                    vec_dart_tips[IndexM0].push_back(IndexTip);
+                    vec_dart_duplicates[IndexM0].push_back(VertToVert[i]);
+                }else//in this case is a dart
+                {
+                    Seam s;
+                    s.patch1_id=MeshToMesh[i].first;
+                    s.patch2_id=MeshToMesh[i].second;
+                    s.corres=VertToVert[i];
+                    seams.push_back(s);
+                }
+            }
+
+            //std::cout<<"2"<<std::endl;
+
+            //get the meshes
+            std::vector<Eigen::MatrixXd> vec_V_3d;
+            std::vector<Eigen::MatrixXi> vec_F;
+            vec_V_3d.resize(SubMeshes.size());
+            vec_F.resize(SubMeshes.size());
+            for (size_t i=0;i<SubMeshes.size();i++)
+            {
+                vcg::tri::MeshToMatrix<TriMeshType>::GetTriMeshData(*SubMeshes[i], vec_F[i], vec_V_3d[i]);
+            }
+
+            std::cout<<"Global Param"<<std::endl;
+            std::vector<Eigen::MatrixXd> vec_V_2d;
+            finalParamMultiPatch(vec_V_3d, vec_F,vec_dart_duplicates,vec_dart_tips,seams,vec_V_2d);
+
+            assert(vec_V_2d.size()==SubMeshes.size());
+            for (int i=0; i<(int)SubMeshes.size(); i++)
+            {
+                for (int j=0; j<(int)SubMeshes[i]->vert.size(); j++)
+                {
+                    SubMeshes[i]->vert[j].T().P()[0] = vec_V_2d[i](j,0);
+                    SubMeshes[i]->vert[j].T().P()[1] = vec_V_2d[i](j,1);
+                }
+                A+=vcg::tri::UV_Utils<TriMeshType>::PerVertUVArea(*SubMeshes[i]);
+            }
         }
 
         ScalarType AbsDelta=math::Sqrt(A)*BorderPatch;
@@ -522,8 +603,8 @@ public:
             }
         }
 
-//        for (size_t i=0;i<SubMeshes.size();i++)
-//            delete(SubMeshes[i]);
+        //        for (size_t i=0;i<SubMeshes.size();i++)
+        //            delete(SubMeshes[i]);
     }
 
     //    static void Parametrize(TriMeshType &mesh,

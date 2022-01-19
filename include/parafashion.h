@@ -293,6 +293,7 @@ public:
         typedef typename MeshType::ScalarType  ScalarType;
         typedef typename MeshType::FacePointer FacePointer;
 
+
     public:
 
         static ParamMode &UVMode()
@@ -321,7 +322,13 @@ public:
             return rem;
         }
 
-        MeshArapQuality(){}
+        static bool &ContinuousCheckSelfInt()
+        {
+            static bool check=false;
+            return check;
+        }
+
+        MeshArapQuality(){ContinuousCheckSelfInt()=true;}
 
         ScalarType operator()(MeshType &m) const
         {
@@ -345,7 +352,7 @@ public:
             //,PMArap,
             if (UVMode()==PMCloth)
             {
-                bool success = ClothParametrize<TriMeshType>(m, MaxQ()); // quality-check param, NOT the final one you see on screen
+                bool success = ClothParametrize<TriMeshType>(m, MaxQ(),ContinuousCheckSelfInt()); // quality-check param, NOT the final one you see on screen
 #ifdef PRINT_PARAFASHION_TIMING
                 steady_clock::time_point post_param = steady_clock::now();
                 int param_time = duration_cast<microseconds>(post_param - pre_param).count();

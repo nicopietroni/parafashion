@@ -128,6 +128,12 @@ bool has_to_update_layout=false;
 
 #define COLOR_LIMITS 1.2
 
+typedef typename vcg::Point2<ScalarType> UVCoordType;
+std::vector<std::vector<UVCoordType > > UVPolyL;
+std::vector<vcg::Color4b> Color;
+std::vector<UVCoordType> Dots;
+vcg::Color4b ColorDots;
+
 void GLDrawPoints(const std::vector<CoordType> &DrawPos,
                   const ScalarType &GLSize,const vcg::Color4b &Col)
 {
@@ -411,6 +417,7 @@ void DoParametrize()
 {
 
     PFashion.DoParametrize();
+    PFashion.GetUVSeamsPolylines(UVPolyL,Color,Dots,ColorDots);
 }
 
 void TW_CALL Parametrize(void *)
@@ -597,13 +604,14 @@ void DoBatchProcess()
         AManager.UpdateProjectionBasis();
         //AManager.UpdateCurvatureAndStretch();
     }
-
     drawDefMesh=true;
     drawRefMesh=false;
     drawParam=true;
     parametrized=true;
 
     UpdateBaseColorMesh();
+
+    PFashion.GetUVSeamsPolylines(UVPolyL,Color,Dots,ColorDots);
 
     //TestPosSeq.clear();
 }
@@ -1018,6 +1026,9 @@ void MyGLWidget::paintGL ()
         glHint( GL_LINE_SMOOTH_HINT, GL_NICEST );
         glDepthRange(0,0.999);
         MeshDrawing<TraceMesh>::GLDrawEdgeUV(deformed_mesh);
+
+        glDepthRange(0,0.99);
+        MeshDrawing<TraceMesh>::GLDrawUVPolylines(deformed_mesh,UVPolyL,Color,Dots,ColorDots);
         //deformed_mesh.GLDrawEdgeUV();
 
         if (draw_uv_and_3D)

@@ -57,7 +57,7 @@ public:
 
     // Match target positions for seams
     bool enable_seam_eqs_ = true;
-    double seam_coeff_ = 10.0;
+    double seam_coeff_ = 200;//10.0;
 
     // this one doesn't do what it's supposed to
     bool enable_angle_eqs_ = false;
