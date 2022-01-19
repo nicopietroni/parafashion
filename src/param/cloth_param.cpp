@@ -2,9 +2,9 @@
 #include "param/self_intersect.h"
 
 //#define DEBUG_CLOTH_PARAM
-#ifdef DEBUG_CLOTH_PARAM
+//#ifdef DEBUG_CLOTH_PARAM
 #include <igl/writeOBJ.h>
-#endif
+//#endif
 
 #define CHECK_TOPOLOGY_PARAM
 
@@ -65,22 +65,23 @@ bool ClothParam::paramAttempt(int max_iter){
             igl::writeOBJ("../data/buggy/not_good.obj", V_3d_, F_);
             igl::writeOBJ("../data/buggy/not_good_uv.obj", V_2d_, F_);
         }
-        if (std::isnan(stretch_u_.maxCoeff())){ // not really supposed to happen if the initialization is ok
-            igl::writeOBJ("../data/buggy/nanned.obj", V_3d_, F_);
-            igl::writeOBJ("../data/buggy/nanned_uv.obj", V_2d_, F_);
-        }
         #endif
+        if (std::isnan(stretch_u_.maxCoeff())){ // not really supposed to happen if the initialization is ok
+            igl::writeOBJ("./nanned.obj", V_3d_, F_);
+            igl::writeOBJ("./nanned_uv.obj", V_2d_, F_);
+        }
+
 
         if (constraintSatisfied()){
             return true;
         }
         V_2d_ = bo_.localGlobal(V_2d_, V_3d_, F_);
         
-        if (checkSelfIntersect()){
-            // interrupt process early
-            // note: we do this after one iteration so we don't punish bad initialization
-            return false;
-        }
+//        if (checkSelfIntersect()){
+//            // interrupt process early
+//            // note: we do this after one iteration so we don't punish bad initialization
+//            return false;
+//        }
     }
     return constraintSatisfied();
 }

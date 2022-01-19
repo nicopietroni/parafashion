@@ -216,6 +216,7 @@ class Parafashion
     typedef typename TriMeshType::VertexType VertexType;
     typedef typename TriMeshType::CoordType CoordType;
     typedef typename TriMeshType::ScalarType ScalarType;
+    typedef typename vcg::Point2<ScalarType> UVCoordType;
 
     TriMeshType &deformed_mesh;
     TriMeshType &reference_mesh;
@@ -231,6 +232,11 @@ class Parafashion
 
     TriMeshType deformed_mesh_step2;
     TriMeshType half_def_mesh_step2;
+
+    std::vector<TriMeshType*> SubMeshes;
+    std::vector<std::pair<int,int> > MeshToMesh;
+    std::vector<std::vector<std::pair<int,int> > > VertToVert;
+    std::vector<int> DartTipVert;
 
 public:
 
@@ -629,9 +635,9 @@ public:
 
         Symmetrizer<TriMeshType> Symm(deformed_mesh,reference_mesh);
 
-//        //THEN REMOVE IF THEY ARE SOFT
-//        vcg::tri::UpdateFlags<TriMeshType>::FaceClearFaceEdgeS(half_def_mesh);
-//        half_def_mesh.UpdateSharpFeaturesFromSelection();
+        //        //THEN REMOVE IF THEY ARE SOFT
+        //        vcg::tri::UpdateFlags<TriMeshType>::FaceClearFaceEdgeS(half_def_mesh);
+        //        half_def_mesh.UpdateSharpFeaturesFromSelection();
 
         PreProcessMesh(half_def_mesh,false);
         Symm.CopyFromHalfDefMesh(half_def_mesh);
@@ -691,9 +697,54 @@ public:
         }
     }
 
+    void GetUVSeamsPolylines( std::vector<std::vector<UVCoordType> > &UVPolyL,
+                              std::vector<vcg::Color4b> &Color,
+                              std::vector<UVCoordType> &Dots,
+                              vcg::Color4b &ColorDots)
+    {
+        UVPolyL.clear();
+        Color.clear();
+        Dots.clear();
+        ColorDots=vcg::Color4b::Red;
+
+        for (size_t i=0;i<VertToVert.size();i++)
+        {
+            TriMeshType *M0=SubMeshes[MeshToMesh[i].first];
+            TriMeshType *M1=SubMeshes[MeshToMesh[i].second];
+
+            vcg::Color4b Col=vcg::Color4b::Scatter(VertToVert.size(),i,0.5f,0.95f);
+            Color.push_back(Col);
+            UVPolyL.resize(UVPolyL.size()+1);
+            for (size_t j=0;j<VertToVert[i].size();j++)
+            {
+                size_t IndexV0=VertToVert[i][j].first;
+                UVCoordType UV0=M0->vert[IndexV0].T().P();
+                UVPolyL.back().push_back(UV0);
+            }
+            UVPolyL.resize(UVPolyL.size()+1);
+            Color.push_back(Col);
+            for (size_t j=0;j<VertToVert[i].size();j++)
+            {
+                size_t IndexV1=VertToVert[i][j].second;
+                UVCoordType UV1=M1->vert[IndexV1].T().P();
+                UVPolyL.back().push_back(UV1);
+            }
+
+            if (DartTipVert[i]!=-1)
+            {
+                size_t IndexDart=DartTipVert[i];
+                UVCoordType UV0=M0->vert[IndexDart].T().P();
+                Dots.push_back(UV0);
+            }
+        }
+    }
+
     void DoParametrize()
     {
-        Parametrizer<TriMeshType>::Parametrize(deformed_mesh,UVMode,param_boundary);
+        Parametrizer<TriMeshType>::Parametrize(deformed_mesh,UVMode,
+                                               SubMeshes, MeshToMesh,
+                                               VertToVert,DartTipVert,
+                                               param_boundary);
         //parametrized=true;
     }
 
@@ -896,15 +947,15 @@ public:
             val.push_back(std::pair<ScalarType,size_t>(Values[i],i));
         }
         std::sort(val.begin(),val.end());
-//        size_t minI=val.size()*0.2;
-//        size_t maxI=val.size()*0.8;
-//        ScalarType minV=val[minI];
-//        ScalarType maxV=val[maxI];
-//        for (size_t i=0;i<deformed_mesh.vert.size();i++)
-//        {
-//            std::max(deformed_mesh.vert[i].Q(),minV);
-//            std::min(deformed_mesh.vert[i].Q(),maxV);
-//        }
+        //        size_t minI=val.size()*0.2;
+        //        size_t maxI=val.size()*0.8;
+        //        ScalarType minV=val[minI];
+        //        ScalarType maxV=val[maxI];
+        //        for (size_t i=0;i<deformed_mesh.vert.size();i++)
+        //        {
+        //            std::max(deformed_mesh.vert[i].Q(),minV);
+        //            std::min(deformed_mesh.vert[i].Q(),maxV);
+        //        }
         for (size_t i=0;i<val.size();i++)
         {
             half_def_mesh.vert[val[i].second].Q()=i;
@@ -924,14 +975,14 @@ public:
 
         MakeMeshSymmetric(PickedPoints,false);
 
-//        vcg::tri::io::ExporterPLY<TriMeshType>::Save(half_def_mesh,"dede0ply");
+        //        vcg::tri::io::ExporterPLY<TriMeshType>::Save(half_def_mesh,"dede0ply");
 
         size_t t1=clock();
         ComputeField(false);
         size_t t2=clock();
-//        //TEST, REMOVE CONSTRAINT
-//        vcg::tri::io::ExporterPLY<TriMeshType>::Save(half_def_mesh,"dede1.ply");
-//        //TEST, REMOVE CONSTRAINTS
+        //        //TEST, REMOVE CONSTRAINT
+        //        vcg::tri::io::ExporterPLY<TriMeshType>::Save(half_def_mesh,"dede1.ply");
+        //        //TEST, REMOVE CONSTRAINTS
 
         TracePatch(false,writeDebug);
 
@@ -948,6 +999,12 @@ public:
             std::cout<<"Time Patch Tracing:"<<(t3-t2)/(ScalarType)CLOCKS_PER_SEC<<std::endl;
             std::cout<<"Time Parametrize:"<<(t4-t3)/(ScalarType)CLOCKS_PER_SEC<<std::endl;
         }
+    }
+
+    ~Parafashion()
+    {
+        for (size_t i=0;i<SubMeshes.size();i++)
+            delete(SubMeshes[i]);
     }
 
     Parafashion(TriMeshType &_deformed_mesh,
