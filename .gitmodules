@@ -10,3 +10,6 @@
 [submodule "glew"]
 	path = lib/glew-cmake
 	url = https://github.com/Perlmint/glew-cmake
+[submodule "lib/json"]
+	path = lib/json
+	url = https://github.com/nlohmann/json.git

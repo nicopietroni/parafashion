@@ -1,0 +1,9 @@
+{
+	"max_iter": 20,
+ 	"stretch_coeff": 10.0,
+	"edges_coeff": 1.0,
+	"selected_coeff": 0.0,
+	"tri_align_coeff": 0.05,
+	"dart_sym_coeff": 10.0,
+	"seam_coeff": 100.0
+}

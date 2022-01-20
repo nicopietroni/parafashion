@@ -424,12 +424,12 @@ void BaryOptimizer::makeSparseMatrix(const Eigen::MatrixXd& V_2d, const Eigen::M
     if (enable_set_seed_eqs_){
         triplet_list.push_back(Eigen::Triplet<double>(next_equation_id_, 0, 1.0));
         b(next_equation_id_) = V_2d(0,0);
-        W.diagonal()[next_equation_id_] = 1.0;
+        W.diagonal()[next_equation_id_] = seed_coeff_;
         next_equation_id_ ++;
 
         triplet_list.push_back(Eigen::Triplet<double>(next_equation_id_, 1, 1.0));
         b(next_equation_id_) = V_2d(0,1);
-        W.diagonal()[next_equation_id_] = 1.0;
+        W.diagonal()[next_equation_id_] = seed_coeff_;
         next_equation_id_ ++;
     }
 

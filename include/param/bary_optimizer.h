@@ -37,7 +37,8 @@ public:
     double stretch_coeff_ = 10.0;
 
     // Place first vertex in (0,0)
-    bool enable_set_seed_eqs_ = true;
+    bool enable_set_seed_eqs_ = false;
+    double seed_coeff_ = 0.0001;
 
     // Preserve mesh edges projections on U/V axes
     bool enable_edges_eqs_ = true;
@@ -49,7 +50,7 @@ public:
 
     // Try to align each triangle vertically
     bool enable_tri_align_eqs_ = true;
-    double tri_align_coeff_ = 0.05;
+    double tri_align_coeff_ = 0.1;
 
     // Encourage pairs of points on dart to be symmetric
     bool enable_dart_sym_eqs_ = true;
@@ -57,11 +58,21 @@ public:
 
     // Match target positions for seams
     bool enable_seam_eqs_ = true;
-    double seam_coeff_ = 200;//10.0;
+    double seam_coeff_ = 000.0;//10.0;
 
     // this one doesn't do what it's supposed to
     bool enable_angle_eqs_ = false;
     double angle_coeff_ = 0.7;
+
+    void setCoeffs(double stretch_coeff, double edges_coeff, double selected_coeff, 
+                   double tri_align_coeff, double dart_sym_coeff, double seam_coeff){
+        stretch_coeff_ = stretch_coeff;
+        edges_coeff_ = edges_coeff;
+        selected_coeff_ = selected_coeff;
+        tri_align_coeff_ = tri_align_coeff;
+        dart_sym_coeff_ = dart_sym_coeff;
+        seam_coeff_ = seam_coeff;
+    }
     // ------------- CONFIG end        ------------- // 
 
     void setSelectedVertices(std::vector<int> selected_vs) {selected_vs_ = selected_vs;};

@@ -67,6 +67,8 @@ public:
     void disableIntersectionCheck(){enable_intersection_check_ = false;};
     void enableIntersectionCheck(){enable_intersection_check_ = true;};
 
+    void loadConfig(std::string config_path);
+
 private:
     // Set during init
     const Eigen::MatrixXd V_3d_;

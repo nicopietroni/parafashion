@@ -20,9 +20,11 @@ Some other copy-pastable inputs:
 ```
 ./parafashion ../data/gargo/gargoyle_rem.ply ../data/gargo/gargoyle_rem.ply
 ./parafashion ../data/wet/wet.obj ../data/wet/wet.obj
+./parafashion ../data/dress/dress.ply ../data/dress/dress.ply
 make -j parafashion && ./parafashion ../data/mark_skirt/mark_skirt_uncut.obj ../data/mark_skirt/mark_skirt_uncut.obj
 ./parafashion ../data/dress_sleeveless.obj ../data/dress_sleeveless.obj
 ./parafashion ../data/katja/robert_shirt_0cm.obj ../data/katja/robert_shirt_0cm.obj
+./parafashion ../data/tee_sleeveless_05KWK8YJOZ/tee_sleeveless_05KWK8YJOZ_sim.obj ../data/tee_sleeveless_05KWK8YJOZ/tee_sleeveless_05KWK8YJOZ_sim.obj
 ```
 
 ## From Nico's Parafashion

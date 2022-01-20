@@ -1,5 +1,6 @@
 #include "param/cloth_param.h"
 #include <igl/avg_edge_length.h>
+#include <nlohmann/json.hpp>
 #include "param/self_intersect.h"
 
 //#define DEBUG_CLOTH_PARAM
@@ -95,11 +96,11 @@ bool ClothParam::paramAttempt(int max_iter){
         V_2d_ = bo_.localGlobal(V_2d_, V_3d_, F_);
         
         if (enable_intersection_check_){
-            /*if (checkSelfIntersect()){
+            if (checkSelfIntersect()){
                 // interrupt process early
                 // note: we do this after one iteration so we don't punish bad initialization
                 return false;
-            }*/
+            }
         }
     }
     return constraintSatisfied();
@@ -137,4 +138,20 @@ void ClothParam::setDartPairs(const std::vector<std::vector<std::pair<int, int>>
 
 bool ClothParam::checkSelfIntersect() const {
     return selfIntersect(V_2d_, bnd_);
+}
+
+void ClothParam::loadConfig(std::string config_path){
+    nlohmann::json j;
+    std::ifstream i(config_path);
+    i >> j;
+
+    double stretch_coeff = j["stretch_coeff"];
+    double edges_coeff = j["edges_coeff"];
+    double selected_coeff = j["selected_coeff"];
+    double tri_align_coeff = j["tri_align_coeff"];
+    double dart_sym_coeff = j["dart_sym_coeff"];
+    double seam_coeff = j["seam_coeff"];
+
+    bo_.setCoeffs(stretch_coeff, edges_coeff, selected_coeff, 
+                  tri_align_coeff, dart_sym_coeff, seam_coeff);
 }

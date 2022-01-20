@@ -2,6 +2,7 @@
 
 #include <vector>
 #include <memory>
+#include <nlohmann/json.hpp>
 
 #include "param/cloth_param.h"
 
@@ -64,6 +65,11 @@ bool finalParamMultiPatch(const std::vector<Eigen::MatrixXd>& vec_V_3d,
                           const std::vector<Seam>& seams,
                           std::vector<Eigen::MatrixXd>& vec_V_2d,
                           CLOTH_INIT_TYPE init_type = CLOTH_INIT_ARAP){
+
+    std::string config_path = "../configs/final_config.json";
+    nlohmann::json config;
+    std::ifstream input_config(config_path);
+    input_config >> config;
     
     int n_patches = vec_V_3d.size();
     if (n_patches != vec_F.size()){
@@ -88,10 +94,11 @@ bool finalParamMultiPatch(const std::vector<Eigen::MatrixXd>& vec_V_3d,
                            vec_dart_tips[patch_id],
                            per_patch_seam_size[patch_id],
                            init_type));
+        ptr->loadConfig(config_path);
         cloth_ps.push_back(std::move(ptr));
     }
     
-    int max_iter = 20;
+    int max_iter = config["max_iter"];
     for (int current_iter = 0; current_iter < max_iter; current_iter++){
 
         // first index is a patch, second is each of its seam in an arbitrary order
