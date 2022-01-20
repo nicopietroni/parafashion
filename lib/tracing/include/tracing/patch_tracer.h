@@ -816,6 +816,8 @@ public:
     size_t Concave_Need;
     bool AllowDarts;
     bool CheckUVIntersection;
+    bool ContinuosCheckUVInt;
+
     bool AllowSelfGluedPatch;
     bool CheckQuadrangulationLimits;
     bool AllowRemoveConcave;
@@ -2528,7 +2530,10 @@ private:
             MeshType m;
             bool UseInternalCuts=(AllowDarts||AllowSelfGluedPatch);
             GetPatchMesh(Index,m,UseInternalCuts);
+
+            PFunct.ContinuousCheckSelfInt()=ContinuosCheckUVInt;
             PatchInfos[Index].QualityFunctorValue=PFunct(m);
+            PFunct.ContinuousCheckSelfInt()=true;
             if (PatchInfos[Index].QualityFunctorValue>0)
             {
                 PartitionType[Index]=NoQualityMatch;
@@ -4649,9 +4654,12 @@ public:
         InitCandidates(TVFlat,TVFlat,TraceDirect);
         //std::cout<<"TEST 1 There are "<<Candidates.size()<<"candidates"<<std::endl;
 
+        //UpdatePartitionsFromChoosen(true);
+
         ChooseGreedyByDistance(false,UsePartitionNeeds);
 
         //std::cout<<"Choosen "<<ChoosenPaths.size()<<"candidates"<<std::endl;
+
     }
 
     size_t TraceLoops(bool UsePartitionNeeds)
@@ -4833,8 +4841,10 @@ public:
                 }
 
                 //then remove if possible the last substitution
+
                 bool Has_Rem=false;
                 bool Has_Removed_Once=false;
+                ContinuosCheckUVInt=false;
                 do{
                     Has_Rem=false;
                     for (int j=ChoosenPaths.size()-1;j>=num0;j--)
@@ -4852,6 +4862,7 @@ public:
 
                 //then apply the parametrizator
                 PatchQualityFunctor PFunct;
+                PFunct.ContinuousCheckSelfInt()=false;
                 //vcg::tri::io::ExporterPLY<MeshType>::Save(SubMesh,"testSubM.ply");
                 ScalarType ValQ=PFunct(SubMesh);
 
@@ -4889,7 +4900,7 @@ public:
             }
 
         }while (Has_changed);
-
+        ContinuosCheckUVInt=true;
         RemoveEmptyPaths();
         MergeContiguousPaths();
 
@@ -5772,6 +5783,7 @@ public:
         AllowRemoveConcave=false;
         PrioMode=PrioModeLoop;
         CheckUVIntersection=false;
+        ContinuosCheckUVInt=true;
         //max_patch_area=MeshArea(Mesh())*0.5;
         //TraceLoopsBorders=true;
     }

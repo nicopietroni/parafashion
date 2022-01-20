@@ -95,11 +95,11 @@ bool ClothParam::paramAttempt(int max_iter){
         V_2d_ = bo_.localGlobal(V_2d_, V_3d_, F_);
         
         if (enable_intersection_check_){
-            if (checkSelfIntersect()){
+            /*if (checkSelfIntersect()){
                 // interrupt process early
                 // note: we do this after one iteration so we don't punish bad initialization
                 return false;
-            }
+            }*/
         }
     }
     return constraintSatisfied();
