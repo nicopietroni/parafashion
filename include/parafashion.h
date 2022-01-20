@@ -258,6 +258,8 @@ public:
     bool SmoothBeforeRemove;
     std::vector<typename TraceMesh::CoordType> PatchCornerPos;
     PriorityMode PrioMode;
+    bool continuity_seams;
+    bool continuity_darts;
 
     void CleanMeshAttributes()
     {
@@ -751,6 +753,8 @@ public:
         Parametrizer<TriMeshType>::Parametrize(deformed_mesh,UVMode,
                                                SubMeshes, MeshToMesh,
                                                VertToVert,DartTipVert,
+                                               continuity_seams,
+                                               continuity_darts,
                                                param_boundary);
         //parametrized=true;
     }
@@ -1030,6 +1034,8 @@ public:
         max_corners=6;
         max_compression=-0.1;
         max_tension=0.1;
+        continuity_seams=false;
+        continuity_darts =false;
         use_darts=true;
         allow_self_glue=true;
         remove_along_symmetry=false;

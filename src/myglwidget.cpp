@@ -723,6 +723,8 @@ void InitBar(QWidget *w) // AntTweakBar menu
     TwType paramMode = TwDefineEnum("ParamMode", parammode, 3);
     TwAddVarRW(barFashion, "UV Mode", paramMode, &PFashion.UVMode, " keyIncr='<' keyDecr='>' help='Change param mode.' ");
 
+    TwAddVarRW(barFashion,"Dart Cont",TW_TYPE_BOOLCPP,&PFashion.continuity_darts," label='Dart Continuity'");
+    TwAddVarRW(barFashion,"Seams Cont",TW_TYPE_BOOLCPP,&PFashion.continuity_seams," label='Seams Continuity'");
     TwAddButton(barFashion,"Parametrize",Parametrize,0,"label='Parametrize Deformed'");
 
     TwAddSeparator(barFashion,NULL,NULL);

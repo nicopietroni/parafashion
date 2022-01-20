@@ -487,6 +487,8 @@ public:
                             std::vector<std::pair<int,int> > &MeshToMesh,
                             std::vector<std::vector<std::pair<int,int> > > &VertToVert,
                             std::vector<int> &DartTipVert,
+                            bool continuity_seams,
+                            bool continuity_darts,
                             ScalarType BorderPatch=0)
     {
         MergeAcrossBoundarySeams(mesh);
@@ -520,6 +522,7 @@ public:
 
         if (UVMode==PMCloth)
         {
+
             //            for (size_t i=0;i<SubMeshes.size();i++)
             //            {
             //                (*SubMeshes[i]).UpdateAttributes();
@@ -547,18 +550,22 @@ public:
                     int IndexM1=MeshToMesh[i].second;
                     assert(IndexM0==IndexM1);
                     size_t IndexTip=DartTipVert[i];
-                    vec_dart_tips[IndexM0].push_back(IndexTip);
-                    vec_dart_duplicates[IndexM0].push_back(VertToVert[i]);
+                    if (continuity_darts)
+                    {
+                        vec_dart_tips[IndexM0].push_back(IndexTip);
+                        vec_dart_duplicates[IndexM0].push_back(VertToVert[i]);
+                    }
                 }else//in this case is a dart
                 {
                     Seam s;
                     s.patch1_id=MeshToMesh[i].first;
                     s.patch2_id=MeshToMesh[i].second;
                     s.corres=VertToVert[i];
-                    seams.push_back(s);
+                    if (continuity_seams)
+                        seams.push_back(s);
                 }
-            }
 
+            }
             //std::cout<<"2"<<std::endl;
 
             //get the meshes
@@ -566,10 +573,13 @@ public:
             std::vector<Eigen::MatrixXi> vec_F;
             vec_V_3d.resize(SubMeshes.size());
             vec_F.resize(SubMeshes.size());
+
+
             for (size_t i=0;i<SubMeshes.size();i++)
             {
                 vcg::tri::MeshToMatrix<TriMeshType>::GetTriMeshData(*SubMeshes[i], vec_F[i], vec_V_3d[i]);
             }
+
 
             std::cout<<"Global Param"<<std::endl;
             std::vector<Eigen::MatrixXd> vec_V_2d;
