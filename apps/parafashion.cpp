@@ -38,7 +38,9 @@ int main(int argc, char *argv[])
     pathDef=std::string(argv[1]);
     std::cout <<"Loading Deformed Mesh "<< pathDef << std::endl;
 
-    pathRef=std::string(argv[2]);
+    if (argc>2)
+        pathRef=std::string(argv[2]);
+    else pathRef = pathDef;
     std::cout <<"Loading Reference Mesh "<< pathRef << std::endl;
 
     if (argc>3)

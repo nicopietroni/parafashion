@@ -97,13 +97,20 @@ void BaryOptimizer::allocateMemory(int n_faces, int n_vs){
     }
 
     if (enable_seam_eqs_){
+        std::cout << "seam_size_ " << seam_size_ << std::endl;
         n_equations_ += seam_size_ * 2;
         n_triplets_ += seam_size_ * 2;
+        #ifdef LOCALGLOBAL_DEBUG
+        std::cout << "seam eqs: " << seam_size_ * 2 << std::endl;
+        #endif
     }
 
     if (enable_tri_align_eqs_){
         n_equations_ += n_faces;
         n_triplets_ += 3 * n_faces;
+        #ifdef LOCALGLOBAL_DEBUG
+        std::cout << "face align eqs: " << n_faces << std::endl;
+        #endif
     }
 
     triplet_list.resize(n_triplets_);
@@ -147,11 +154,11 @@ void BaryOptimizer::equationsFromTriangle(const Eigen::MatrixXd& V_2d, const Eig
     double target_v = (DVp - Dp).norm();
 
     #ifdef LOCALGLOBAL_DEBUG
-    std::cout << "bary centroid: " << barycentricCoords(D, V_tri_2d.row(0), V_tri_2d.row(1), V_tri_2d.row(2)) << std::endl;
+    /*std::cout << "bary centroid: " << barycentricCoords(D, V_tri_2d.row(0), V_tri_2d.row(1), V_tri_2d.row(2)) << std::endl;
     std::cout << "bary DU: " << DU_bary << std::endl;
     std::cout << "bary DV: " << DV_bary << std::endl;
     std::cout << "target_u: " << target_u << std::endl;
-    std::cout << "target_v: " << target_v << std::endl;
+    std::cout << "target_v: " << target_v << std::endl;*/
     #endif
 
     if (enable_stretch_eqs_){

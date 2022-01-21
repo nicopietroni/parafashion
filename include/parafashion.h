@@ -1034,8 +1034,8 @@ public:
         max_corners=6;
         max_compression=-0.1;
         max_tension=0.1;
-        continuity_seams=false;
-        continuity_darts =false;
+        continuity_seams=true;
+        continuity_darts =true;
         use_darts=true;
         allow_self_glue=true;
         remove_along_symmetry=false;

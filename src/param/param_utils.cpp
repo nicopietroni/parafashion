@@ -5,6 +5,7 @@
 #include <Eigen/LU>
 #include <iostream>
 #include <cmath>
+#include <igl/doublearea.h>
 
 #include <igl/lscm.h>
 
@@ -246,4 +247,60 @@ Eigen::MatrixXd paramSCAF(const Eigen::MatrixXd& V_3d, const Eigen::MatrixXi& F,
     return V_3d;
 }
 
+Eigen::Matrix3d rotationVote(const Eigen::MatrixXd& V_3d,
+                             const Eigen::MatrixXd& V_2d,
+                             const Eigen::MatrixXi& F,
+                             const Eigen::RowVector3d& target_3d,
+                             const Eigen::RowVector3d& target_2d){
 
+    if (target_2d(2) != 0) std::cout << "Wrong usage of rotationVote" << std::endl;
+    if (V_2d.cols() != 3) std::cout << "Wrong usage of rotationVote, V_2d should have 3 cols for convenience" << std::endl;
+
+    // For each triangle
+    //     proj axis on 3D plane
+    //     transport to 2D
+    //     add to average
+    // 
+
+    // ABC triangle in 2d
+    // ApBpCp triangle in 3d
+    // Ep = Ap + vector
+    // then project Ep in Ep_proj, and convert to 2D
+
+    Eigen::VectorXd area;
+    igl::doublearea(V_3d, F, area);
+    double total_weights = 0.0;
+    Eigen::RowVector3d average_proj = Eigen::RowVector3d::Zero(V_2d.rows());
+    for (int f_id=0; f_id<F.rows(); f_id++){
+        Eigen::RowVector3d A = V_2d.row(F(f_id, 0));
+        Eigen::RowVector3d B = V_2d.row(F(f_id, 1));
+        Eigen::RowVector3d C = V_2d.row(F(f_id, 2));
+        Eigen::RowVector3d Ap = V_3d.row(F(f_id, 0));
+        Eigen::RowVector3d Bp = V_3d.row(F(f_id, 1));
+        Eigen::RowVector3d Cp = V_3d.row(F(f_id, 2));
+        Eigen::RowVector3d Ep = Ap + target_3d;
+ 
+        Eigen::Vector3d BpAp = (Bp - Ap).transpose();
+        Eigen::Vector3d CpAp = (Cp - Ap).transpose();
+        Eigen::RowVector3d n = (BpAp.cross(CpAp)).transpose();
+        n = n.normalized();
+        Eigen::RowVector3d v = Ep - Ap;
+        double dist = v(0) * n(0) + v(1) * n(1) + v(2) * n(2);
+        Eigen::RowVector3d Ep_proj = Ep - dist * n;
+
+        Eigen::Vector3d bary_E_proj = barycentricCoords(Ep_proj, Ap, Bp, Cp);
+        Eigen::RowVector3d E = bary_E_proj(0) * A
+                             + bary_E_proj(1) * B
+                             + bary_E_proj(2) * C;
+        Eigen::RowVector3d AE = E - A;
+
+        double weight = area(f_id);
+        total_weights += weight;
+        average_proj += AE * weight;
+    }
+
+    // average isn't really what we need
+
+    average_proj /= total_weights;
+    return computeRotation(average_proj, target_2d);
+}

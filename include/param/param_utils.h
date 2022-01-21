@@ -40,3 +40,9 @@ Eigen::MatrixXd paramSCAF(const Eigen::MatrixXd& V_3d, const Eigen::MatrixXi& F,
 
 Eigen::Matrix3d computeRotation(const Eigen::RowVector3d& from,
                                 const Eigen::RowVector3d& to);
+
+Eigen::Matrix3d rotationVote(const Eigen::MatrixXd& V_3d,
+                             const Eigen::MatrixXd& V_2d,
+                             const Eigen::MatrixXi& F,
+                             const Eigen::RowVector3d& target_3d,
+                             const Eigen::RowVector3d& target_2d);

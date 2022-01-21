@@ -3,7 +3,7 @@
 #include <vector>
 #include <memory>
 #include <nlohmann/json.hpp>
-
+#include <igl/writeOBJ.h>
 #include "param/cloth_param.h"
 
 //#define MULTI_PARAM_DEBUG
@@ -95,6 +95,15 @@ bool finalParamMultiPatch(const std::vector<Eigen::MatrixXd>& vec_V_3d,
                            per_patch_seam_size[patch_id],
                            init_type));
         ptr->loadConfig(config_path);
+
+        if (config["debug"]["save_init_params"]){
+            std::cout << "Saving init params..." << std::endl;
+            Eigen::MatrixXd V2_init = ptr->getV2d();
+            std::string path = config["debug"]["save_init_paths"];
+            igl::writeOBJ(path + "init_param.obj", V2_init, vec_F[patch_id]);
+        }
+
+
         cloth_ps.push_back(std::move(ptr));
     }
     

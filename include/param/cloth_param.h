@@ -85,6 +85,7 @@ private:
 
     // config
     bool enable_intersection_check_ = true;
+    bool rotate_each_iter_ = true;
 
     // Sets pairs of vertex ids which should be symmetrical in a given dart.
     // first indexing: dart id

@@ -37,19 +37,19 @@ public:
     double stretch_coeff_ = 10.0;
 
     // Place first vertex in (0,0)
-    bool enable_set_seed_eqs_ = false;
-    double seed_coeff_ = 0.0001;
+    bool enable_set_seed_eqs_ = true;
+    double seed_coeff_ = 1.0;
 
     // Preserve mesh edges projections on U/V axes
     bool enable_edges_eqs_ = true;
     double edges_coeff_ = 1.0;
 
     // Align V axis with pair of selected vertices
-    bool enable_selected_eqs_ = false;
+    bool enable_selected_eqs_ = false; // ALIGNMENT EQS DISABLED, USING GLOBAL ROTATION INSTEAD
     double selected_coeff_ = 20.0;
 
     // Try to align each triangle vertically
-    bool enable_tri_align_eqs_ = true;
+    bool enable_tri_align_eqs_ = false; // ALIGNMENT EQS DISABLED, USING GLOBAL ROTATION INSTEAD
     double tri_align_coeff_ = 0.1;
 
     // Encourage pairs of points on dart to be symmetric
@@ -58,7 +58,7 @@ public:
 
     // Match target positions for seams
     bool enable_seam_eqs_ = true;
-    double seam_coeff_ = 000.0;//10.0;
+    double seam_coeff_ = 1.0;//10.0;
 
     // this one doesn't do what it's supposed to
     bool enable_angle_eqs_ = false;
@@ -100,7 +100,7 @@ private:
     std::vector<int> selected_vs_;
     //std::vector<SimpleDart> simple_darts_;
     std::vector<UnorderedDart> unordered_darts_;
-    int seam_size_;
+    int seam_size_ = 0;
     
     Eigen::SparseMatrix<double> A;
     Eigen::VectorXd b;
