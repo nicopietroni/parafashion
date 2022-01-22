@@ -97,7 +97,6 @@ void BaryOptimizer::allocateMemory(int n_faces, int n_vs){
     }
 
     if (enable_seam_eqs_){
-        std::cout << "seam_size_ " << seam_size_ << std::endl;
         n_equations_ += seam_size_ * 2;
         n_triplets_ += seam_size_ * 2;
         #ifdef LOCALGLOBAL_DEBUG

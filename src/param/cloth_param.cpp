@@ -125,7 +125,8 @@ bool ClothParam::paramAttempt(int max_iter){
             }
         }
     }
-    return constraintSatisfied();
+    bo_.measureScore(V_2d_, V_3d_, F_, stretch_u_, stretch_v_);
+    return constraintSatisfied() && !checkSelfIntersect();
 }
 
 void ClothParam::printStretchStats() const {
@@ -135,18 +136,30 @@ void ClothParam::printStretchStats() const {
     printf("V: %f -> %f (%f)\n", stretch_v_.minCoeff(), stretch_v_.maxCoeff(), stretch_v_.mean());
 };
 
+void vectorSanityCheck(Eigen::VectorXd& vec){
+    if (std::isnan(vec.maxCoeff()) ||
+        std::isnan(vec.minCoeff())){
+        
+        std::cout << "Sanitizing nan..." << std::endl;
+        vec = Eigen::VectorXd::Constant(vec.rows(), 10e8);
+    }
+}
 
 void ClothParam::getStretchStats(Eigen::VectorXd& stretch_u, Eigen::VectorXd& stretch_v) const {
+    vectorSanityCheck(stretch_u);
+    vectorSanityCheck(stretch_v);
     stretch_u = stretch_u_;
     stretch_v = stretch_v_;
 }
-
 
 void ClothParam::measureStretchStats(const Eigen::MatrixXd& V_2d, const Eigen::MatrixXd& V_3d, 
                                 const Eigen::MatrixXi& F, Eigen::VectorXd& stretch_u, 
                                 Eigen::VectorXd& stretch_v){
     BaryOptimizer bo;
     bo.measureScore(V_2d, V_3d, F, stretch_u, stretch_v);
+
+    vectorSanityCheck(stretch_u);
+    vectorSanityCheck(stretch_v);
 }
 
 void ClothParam::setAlignmentVertexPair(int v1_id, int v2_id){

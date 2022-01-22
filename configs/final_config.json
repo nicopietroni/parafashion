@@ -4,8 +4,8 @@
 	"edges_coeff": 1.0,
 	"selected_coeff": 0.0,
 	"tri_align_coeff": 0.00,
-	"dart_sym_coeff": 100.0,
-	"seam_coeff": 20.0,
+	"dart_sym_coeff": 1.0,
+	"seam_coeff": 100.0,
 	"debug": {
 		"save_init_params": true,
 		"save_init_paths": "../data/buggy/",
