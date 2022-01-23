@@ -744,6 +744,7 @@ void InitBar(QWidget *w) // AntTweakBar menu
     TwAddVarRW(barFashion, "Priority Mode", prioMode, &PFashion.PrioMode, " keyIncr='<' keyDecr='>' help='Change priority mode.' ");
     TwAddVarRW(barFashion,"CheckUV",TW_TYPE_BOOLCPP,&PFashion.CheckUVIntersection," label='Check UV Inters'");
     TwAddVarRW(barFashion,"SmoothRem",TW_TYPE_BOOLCPP,&PFashion.SmoothBeforeRemove," label='Smooth Before Remove'");
+    TwAddVarRW(barFashion,"CheckT",TW_TYPE_BOOLCPP,&PFashion.check_T_junction," label='Check T Junction'");
 
     TwAddButton(barFashion,"BatchProcess",BatchProcess,0,"label='Batch Process'");
     //TwAddButton(barFashion,"BatchProcess 2",BatchProcess2,0,"label='Batch Process 2'");
@@ -1028,11 +1029,9 @@ void MyGLWidget::paintGL ()
         glHint( GL_LINE_SMOOTH_HINT, GL_NICEST );
         glDepthRange(0,0.999);
         MeshDrawing<TraceMesh>::GLDrawEdgeUV(deformed_mesh);
-
         glDepthRange(0,0.99);
         MeshDrawing<TraceMesh>::GLDrawUVPolylines(deformed_mesh,UVPolyL,Color,Dots,ColorDots);
         //deformed_mesh.GLDrawEdgeUV();
-
         if (draw_uv_and_3D)
         {
             glPopMatrix();

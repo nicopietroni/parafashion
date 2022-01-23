@@ -260,6 +260,7 @@ public:
     PriorityMode PrioMode;
     bool continuity_seams;
     bool continuity_darts;
+    bool check_T_junction;
 
     void CleanMeshAttributes()
     {
@@ -354,16 +355,47 @@ public:
             //,PMArap,
             if (UVMode()==PMCloth)
             {
-                bool success = ClothParametrize<TriMeshType>(m, MaxQ(),ContinuousCheckSelfInt()); // quality-check param, NOT the final one you see on screen
+                std::vector<typename TriMeshType::ScalarType> StretchU;
+                std::vector<typename TriMeshType::ScalarType> StretchV;
+                bool DoSelfInt=false;
+                bool success = ClothParametrize<TriMeshType>(m, StretchU,StretchV,
+                                                             MaxQ(),ContinuousCheckSelfInt(),
+                                                             DoSelfInt); // quality-check param, NOT the final one you see on screen
 #ifdef PRINT_PARAFASHION_TIMING
                 steady_clock::time_point post_param = steady_clock::now();
                 int param_time = duration_cast<microseconds>(post_param - pre_param).count();
                 std::cout << "Param time : " << param_time << " [µs]" << std::endl;
 #endif
-                if (success)
-                    return 0;
+                //if ((!success)||(DoSelfInt)) return 1000;
+                ScalarType A=0;
+                if (DoSelfInt)
+                {
+                    //then return the entire area
+                    for (size_t i=0;i<m.face.size();i++)
+                        A+=vcg::DoubleArea(m.face[i]);
+                }
                 else
-                    return 1000000.0;
+                {
+                    if (success) return 0;
+
+                    //                    //then return the entire area
+                    //                    for (size_t i=0;i<m.face.size();i++)
+                    //                        A+=vcg::DoubleArea(m.face[i]);
+
+                    for (size_t i=0;i<m.face.size();i++)
+                    {
+                        if (StretchU[i]<MinQ())
+                            A+=vcg::DoubleArea(m.face[i]);
+                        if (StretchU[i]>MaxQ())
+                            A+=vcg::DoubleArea(m.face[i]);
+                        if (StretchV[i]<MinQ())
+                            A+=vcg::DoubleArea(m.face[i]);
+                        if (StretchV[i]>MaxQ())
+                            A+=vcg::DoubleArea(m.face[i]);
+                    }
+                }
+
+                return A;
             }
 
             if (UVMode()==PMConformal)
@@ -378,9 +410,10 @@ public:
                 ScalarType A=0;
                 for (size_t i=0;i<m.face.size();i++)
                 {
-                    if (m.face[i].Q()<(MinQ()))A+=vcg::DoubleArea(m.face[i]);
+                    if (m.face[i].Q()<MinQ())A+=vcg::DoubleArea(m.face[i]);
                     if (m.face[i].Q()>MaxQ())A+=vcg::DoubleArea(m.face[i]);
                 }
+                std::cout<<"Area:"<<A<<std::endl;
                 return A;
             }
 
@@ -534,6 +567,7 @@ public:
         PTr.away_from_singular=true;
         PTr.match_valence=match_valence;
         PTr.CClarkability=-1;
+        PTr.sample_ratio=1;
         //PTr.FirstBorder=true;
         half_def_mesh.UpdateAttributes();
         bool PreRemoveStep=true;
@@ -568,6 +602,7 @@ public:
 
         PTr.InitTracer(100,DebugMSG);
         PTr.AllowRemoveConcave=true;
+        PTr.CheckTJunction=check_T_junction;
         //PTr.away_from_singular=false;
         //PTr.AllowRemoveConcave=false;
 
@@ -724,6 +759,7 @@ public:
             vcg::Color4b Col=vcg::Color4b::Scatter(VertToVert.size(),i,0.5f,0.95f);
             Color.push_back(Col);
             UVPolyL.resize(UVPolyL.size()+1);
+            //assert(VertToVert[i].size()>1);
             for (size_t j=0;j<VertToVert[i].size();j++)
             {
                 size_t IndexV0=VertToVert[i][j].first;
@@ -822,6 +858,7 @@ public:
 
         //merge mesh
         vcg::tri::Clean<TraceMesh>::RemoveDuplicateVertex(deformed_mesh);
+        vcg::tri::Clean<TraceMesh>::RemoveUnreferencedVertex(deformed_mesh);
         vcg::tri::Allocator<TraceMesh>::CompactEveryVector(deformed_mesh);
         deformed_mesh.UpdateAttributes();
 
@@ -897,7 +934,6 @@ public:
         if (use_darts)
         {
             PTr.SplitIntoSubPaths();
-            PTr.SplitIntoIntervals(PTr.ChoosenPaths);
         }
 
         //then set only removeable the ones that are on symmetry line
@@ -911,9 +947,12 @@ public:
                 CoordType P1=VGraph.NodePos(N1);
                 CoordType AvgP=(P0+P1)/2;
                 CoordType Proj=Symmetrizer<TraceMesh>::SymmPlane().Projection(AvgP);
-                if ((Proj-AvgP).Norm()<0.00001)
+                if ((Proj-AvgP).Norm()<0.0001)
                     PTr.ChoosenPaths[i].Unremovable=false;
             }
+
+        PTr.SplitIntoIntervals(PTr.ChoosenPaths);
+
         //then do the actual remove
         PTr.RemovePaths();
         //update the selection on the mesh
@@ -1031,9 +1070,9 @@ public:
         match_valence=false;
         check_stress=true;
         param_boundary=0.03;
-        max_corners=6;
-        max_compression=-0.1;
-        max_tension=0.1;
+        max_corners=8;
+        max_compression=-0.05;
+        max_tension=0.05;
         continuity_seams=true;
         continuity_darts =true;
         use_darts=true;
@@ -1043,6 +1082,7 @@ public:
         UVMode=PMCloth;
         CheckUVIntersection=true;
         SmoothBeforeRemove=true;
+        check_T_junction=true;
     }
 };
 
