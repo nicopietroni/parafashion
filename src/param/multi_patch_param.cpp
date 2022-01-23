@@ -1,8 +1,10 @@
+
+//#define USE_JSON_CONFIG
+
 #include "param/multi_patch_param.h"
 #include "param/metrics.h"
 
 //#define MULTI_PARAM_DEBUG
-
 
 
 void computeTargetPositions(const Eigen::MatrixXd& V1,
@@ -57,10 +59,12 @@ bool finalParamMultiPatch(const std::vector<Eigen::MatrixXd>& vec_V_3d,
                           std::vector<Eigen::MatrixXd>& vec_V_2d,
                           CLOTH_INIT_TYPE init_type){
 
+    #ifdef USE_JSON_CONFIG
     std::string config_path = "../configs/final_config.json";
     nlohmann::json config;
     std::ifstream input_config(config_path);
     input_config >> config;
+    #endif
     
     int n_patches = vec_V_3d.size();
     if (n_patches != vec_F.size()){
@@ -85,6 +89,8 @@ bool finalParamMultiPatch(const std::vector<Eigen::MatrixXd>& vec_V_3d,
                            vec_dart_tips[patch_id],
                            per_patch_seam_size[patch_id],
                            init_type));
+        
+        #ifdef USE_JSON_CONFIG
         ptr->loadConfig(config_path);
 
         if (config["debug"]["save_init_params"]){
@@ -93,12 +99,16 @@ bool finalParamMultiPatch(const std::vector<Eigen::MatrixXd>& vec_V_3d,
             std::string path = config["debug"]["save_init_paths"];
             igl::writeOBJ(path + "init_param.obj", V2_init, vec_F[patch_id]);
         }
-
+        #endif
 
         cloth_ps.push_back(std::move(ptr));
     }
-    
-    int max_iter = config["max_iter"];
+
+    int max_iter = 20;
+    #ifdef USE_JSON_CONFIG
+    max_iter = config["max_iter"];
+    #endif
+
     for (int current_iter = 0; current_iter < max_iter; current_iter++){
 
         // first index is a patch, second is each of its seam in an arbitrary order
