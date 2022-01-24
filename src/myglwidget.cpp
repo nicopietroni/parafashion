@@ -406,6 +406,7 @@ void TW_CALL ColorByPatch(void *)
 void DoSymmetrize()
 {
     PFashion.MakeMeshSymmetric(GPath.PickedPoints);
+    vcg::tri::io::ExporterPLY<TraceMesh>::Save(deformed_mesh,"symmetrized.ply");
 }
 
 void TW_CALL SymmetrizeDeformed(void *)
@@ -485,6 +486,8 @@ void TW_CALL SaveDebugPatches(void *)
 
 void TW_CALL SaveData(void *)
 {
+    PFashion.SaveDebugPatches(pathDef);
+
     //get the path
     std::string ProjM=pathDef;
     size_t indexExt=ProjM.find_last_of(".");
@@ -710,6 +713,7 @@ void InitBar(QWidget *w) // AntTweakBar menu
     TwAddVarRW(barFashion,"MaxCorners",TW_TYPE_INT32,&PFashion.max_corners," label='Max Corners'");
     TwAddVarRW(barFashion,"SelfGlue",TW_TYPE_BOOLCPP,&PFashion.allow_self_glue," label='Allow SelfGlue'");
     TwAddVarRW(barFashion,"Darts",TW_TYPE_BOOLCPP,&PFashion.use_darts," label='Allow Darts'");
+    TwAddVarRW(barFashion,"DartInt",TW_TYPE_INT32,&PFashion.dart_intervals," label='Dart Interval'");
 
 
     TwAddButton(barFashion,"TracePaths",TracePath,0,"label='Trace Paths'");

@@ -251,6 +251,7 @@ public:
     bool remove_along_symmetry;
     ScalarType param_boundary;
     size_t max_corners;
+    size_t dart_intervals;
     ScalarType max_compression;
     ScalarType max_tension;
     bool remesh_on_test;
@@ -564,10 +565,10 @@ public:
         PatchGeneralParameters::MaxAdmittable()=max_corners;
 
         PTr.split_on_removal=true;
-        PTr.away_from_singular=true;
+        PTr.away_from_singular=false;
         PTr.match_valence=match_valence;
         PTr.CClarkability=-1;
-        PTr.sample_ratio=1;
+        //PTr.sample_ratio=1;
         //PTr.FirstBorder=true;
         half_def_mesh.UpdateAttributes();
         bool PreRemoveStep=true;
@@ -605,7 +606,7 @@ public:
         PTr.CheckTJunction=check_T_junction;
         //PTr.away_from_singular=false;
         //PTr.AllowRemoveConcave=false;
-
+        PTr.subInt=dart_intervals;
         std::vector<ScalarType> DartPriority;
         if (use_darts)
             GetVertPriorityByConvexity(DartPriority);
@@ -904,7 +905,10 @@ public:
         PTr.MaxVal=max_corners;
         //PTr.Concave_Need=1;
         PTr.AllowDarts=use_darts;
+        PTr.subInt=dart_intervals;
         PTr.AllowSelfGluedPatch=allow_self_glue;
+        PTr.AllowRemoveConcave=true;
+        PTr.CheckTJunction=check_T_junction;
 
 
         if (max_compression<max_tension)
@@ -930,11 +934,8 @@ public:
 
         //reinitialize path from selected
         PTr.ReinitPathFromEdgeSel();
+        PTr.SplitIntoSubPaths();
 
-        if (use_darts)
-        {
-            PTr.SplitIntoSubPaths();
-        }
 
         //then set only removeable the ones that are on symmetry line
         PTr.SetAllUnRemoveable();
@@ -950,9 +951,10 @@ public:
                 if ((Proj-AvgP).Norm()<0.0001)
                     PTr.ChoosenPaths[i].Unremovable=false;
             }
-
-        PTr.SplitIntoIntervals(PTr.ChoosenPaths);
-
+        if (use_darts)
+        {
+            PTr.SplitIntoIntervals(PTr.ChoosenPaths);
+        }
         //then do the actual remove
         PTr.RemovePaths();
         //update the selection on the mesh
@@ -1073,11 +1075,12 @@ public:
         max_corners=8;
         max_compression=-0.05;
         max_tension=0.05;
+        dart_intervals=3;
         continuity_seams=true;
         continuity_darts =true;
         use_darts=true;
         allow_self_glue=true;
-        remove_along_symmetry=false;
+        remove_along_symmetry=true;
         remesh_on_test=false;
         UVMode=PMCloth;
         CheckUVIntersection=true;

@@ -35,4 +35,4 @@ bool finalParamMultiPatch(const std::vector<Eigen::MatrixXd>& vec_V_3d,
                           const std::vector<std::vector<int>>& vec_dart_tips,
                           const std::vector<Seam>& seams,
                           std::vector<Eigen::MatrixXd>& vec_V_2d,
-                          CLOTH_INIT_TYPE init_type = CLOTH_INIT_ARAP);
+                          CLOTH_INIT_TYPE init_type = CLOTH_INIT_LSCM);
