@@ -2,6 +2,7 @@
 
 #include <Eigen/Core>
 #include <igl/boundary_loop.h>
+#include <memory>
 
 #include "param/bary_optimizer.h"
 #include "param/param_utils.h"
@@ -69,6 +70,20 @@ public:
     void enableIntersectionCheck(){enable_intersection_check_ = true;};
 
     void loadConfig(std::string config_path);
+
+    Eigen::VectorXd getB() {return bo_.getB();};
+    void stealSubBs(std::vector<std::unique_ptr<ClothParam>>& subs){
+        std::vector<Eigen::VectorXd> other_bs;
+        for (int i=0; i<subs.size(); i++){
+            other_bs.push_back(subs[i]->getB());
+        }
+        bo_.other_bs = other_bs;
+    };
+    void sendMainV2d(std::vector<std::unique_ptr<ClothParam> >& subs){
+        for (int i=0; i<subs.size(); i++){
+            subs[i]->setV2d(V_2d_);
+        }
+    };
 
 private:
     // Set during init

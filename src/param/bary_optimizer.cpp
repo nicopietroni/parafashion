@@ -527,6 +527,15 @@ Eigen::MatrixXd BaryOptimizer::localGlobal(const Eigen::MatrixXd& V_2d, const Ei
     #endif
 
     makeSparseMatrix(V_2d, V_3d, F);
+
+    if (other_bs.size() > 0){
+        std::cout << "Found other bs" << std::endl;
+        for (Eigen::VectorXd ob: other_bs){
+            b += ob;
+        }
+        b /= (other_bs.size() + 1);
+    }
+
     DiagonalMatrixXd Wt = W;
     if (USE_WEIGTHS_IN_LINEAR_SYSTEM){
         //Wt = Wt.transpose();

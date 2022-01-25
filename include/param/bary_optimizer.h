@@ -92,6 +92,9 @@ public:
         p_ids_seams_ = p_ids;
     }
 
+    Eigen::VectorXd getB(){return b;};
+    std::vector<Eigen::VectorXd> other_bs;
+
 private:
 
     int next_equation_id_ = 0;
@@ -108,6 +111,7 @@ private:
     DiagonalMatrixXd W; 
     Eigen::MatrixXd V_tri_2d;
     Eigen::MatrixXd V_tri_3d;
+
 
     std::vector<Eigen::MatrixXd> targets_p_seams_;
     std::vector<Eigen::VectorXi> p_ids_seams_;
