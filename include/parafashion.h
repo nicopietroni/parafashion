@@ -254,6 +254,7 @@ public:
     size_t dart_intervals;
     ScalarType max_compression;
     ScalarType max_tension;
+    ScalarType sample_rate;
     bool remesh_on_test;
     bool CheckUVIntersection;
     bool SmoothBeforeRemove;
@@ -568,7 +569,7 @@ public:
         PTr.away_from_singular=false;
         PTr.match_valence=match_valence;
         PTr.CClarkability=-1;
-        //PTr.sample_ratio=1;
+        PTr.sample_ratio=sample_rate;
         //PTr.FirstBorder=true;
         half_def_mesh.UpdateAttributes();
         bool PreRemoveStep=true;
@@ -1075,6 +1076,7 @@ public:
         max_corners=8;
         max_compression=-0.05;
         max_tension=0.05;
+        sample_rate=1;
         dart_intervals=3;
         continuity_seams=true;
         continuity_darts =true;

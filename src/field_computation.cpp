@@ -61,6 +61,20 @@ void FieldComputation<TriMeshType>::ComputeField(TriMeshType &mesh,
     typename FieldSmootherType::SmoothParam Param;
     Param.align_borders=true;
 
+    if (FMode==FMCurvatureOnly)
+    {
+        FieldSmootherType::InitByCurvature(mesh,3);
+        vcg::tri::UpdateQuality<TriMeshType>::VertexFromFace(mesh);
+        //vcg::tri::UpdateColor<TriMeshType>::PerFaceConstant(mesh,vcg::Color4b::LightGray);
+        vcg::tri::UpdateColor<TriMeshType>::PerFaceQualityRamp(mesh);
+//        for (size_t i=0;i<mesh.face.size();i++)
+//        {
+//            mesh.face[i].PD2()*=mesh.face[i].Q();
+//            mesh.face[i].PD1()*=mesh.face[i].Q();
+//        }
+        return;
+    }
+
     if (FMode==FMCurvatureFrames)
     {
         if (AManag.NumFrames()<2)
@@ -70,8 +84,9 @@ void FieldComputation<TriMeshType>::ComputeField(TriMeshType &mesh,
         }
         else
         {
-            //AManag.UpdateProjectionBasisIfNeeded();
-            //AManag.UpdateAnimationMesh();
+
+            AManag.UpdateAnimationMesh();
+            //AManag.UpdateProjectionBasis();
             AManag.InitTargetDirectionsOnMesh();
             AManag.TransferDirOnMesh(mesh);
             Param.use_predefined_field=true;

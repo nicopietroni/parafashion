@@ -74,6 +74,15 @@ class AnimationManager
     std::vector<CoordType> TargetVect;
     std::vector<ScalarType> TargetAnis;
 
+//    //normal RestShape
+//    std::vector<CoordType>  RestNormVect;
+
+//    //curvature RestShape
+//    std::vector<CoordType> RestCurvVect;
+
+//    //anisotropy RestShape
+//    std::vector<ScalarType>  RestCurvAnis;
+
     void InterpolateFaceField(const size_t &IndexFace,const size_t &IndexFrame,
                               CoordType &InterpCurvDirection,
                               ScalarType &InterpAnisotropyVal);
@@ -87,6 +96,7 @@ class AnimationManager
     CoordType InterpolatePos(size_t IndexV,size_t IndexFrame);
 
     ScalarType percentileAnis;
+    //ScalarType percentileAnisRest;
     ScalarType percentileStretchCompress;
     //ScalarType percentileStretch;
 
@@ -140,6 +150,8 @@ public:
     void UpdateAnimationMesh();
 
     void TransferDirOnMesh(TriMeshType &target);
+
+ //   void UpdateRestInfo();
 
     AnimationManager(TriMeshType &_target_shape);
 };

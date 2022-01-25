@@ -231,9 +231,9 @@ public:
                                  const char *pathPNG,
                                  QImage &SVGTxt,
                                  float scaleVal=1000,
-                                 float penwidth=4,
-                                 float boundSize=30,
-                                 float fontsize=15)
+                                 float penwidth=2,
+                                 float boundSize=15,
+                                 float fontsize=7)
     {
         //vcg::Box2<ScalarType> uv_box=vcg::tri::UV_Utils<CMesh>::PerWedgeUVBox(mesh);
 

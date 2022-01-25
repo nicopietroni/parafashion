@@ -16,7 +16,7 @@
 #include <vcg/complex/algorithms/parametrization/tangent_field_operators.h>
 #include <animation_manager.h>
 
-enum FieldMode{FMBoundary,FMCurvature,FMCurvatureFrames};
+enum FieldMode{FMBoundary,FMCurvature,FMCurvatureFrames,FMCurvatureOnly};
 
 template <class TriMeshType>
 class FieldComputation

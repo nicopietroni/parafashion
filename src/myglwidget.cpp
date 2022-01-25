@@ -89,7 +89,7 @@ int Iterations;
 ScalarType EdgeStep;
 bool drawRefMesh=true;
 bool drawDefMesh=true;
-bool drawSymmetryPlane=true;
+bool drawSymmetryPlane=false;
 bool parametrized=false;
 bool colored_distortion=false;
 bool draw3D=true;
@@ -97,7 +97,7 @@ bool textured=false;
 bool drawParam=false;
 bool matchcurvature=false;
 bool hasFrames=false;
-
+bool drawConstraints=true;
 int xMouse,yMouse;
 
 //typedef FieldSmoother<TraceMesh> FieldSmootherType;
@@ -242,7 +242,7 @@ void GlDrawPlane(const vcg::Plane3<ScalarType> &Pl,
     glPopAttrib();
 }
 
-void GLDrawPatchEdges(vcg::Color4b col=vcg::Color4b(0,0,255,255),
+void GLDrawPatchEdges(vcg::Color4b col=vcg::Color4b(0,0,0,255),
                       ScalarType GLSize=5)
 {
     glPushAttrib(GL_ALL_ATTRIB_BITS);
@@ -403,15 +403,27 @@ void TW_CALL ColorByPatch(void *)
     colored_distortion=false;
 }
 
+void TW_CALL InitByCurvature(void *)
+{
+//    DoColorByPatch();
+//    colored_distortion=false;
+}
+
 void DoSymmetrize()
 {
     PFashion.MakeMeshSymmetric(GPath.PickedPoints);
-    vcg::tri::io::ExporterPLY<TraceMesh>::Save(deformed_mesh,"symmetrized.ply");
+    //vcg::tri::io::ExporterPLY<TraceMesh>::Save(deformed_mesh,"symmetrized.ply");
 }
 
 void TW_CALL SymmetrizeDeformed(void *)
 {
     DoSymmetrize();
+    if (hasFrames)
+    {
+        AManager.UpdateProjectionBasis();
+        //AManager.UpdateRestInfo();
+        //AManager.UpdateCurvatureAndStretch();
+    }
 }
 
 void DoParametrize()
@@ -431,7 +443,10 @@ void DoTracePath()
 {
     PFashion.TracePatch();
     if (hasFrames)
+    {
         AManager.UpdateProjectionBasis();
+        //AManager.UpdateRestInfo();
+    }
     //TestPosSeq.clear();
 }
 
@@ -463,9 +478,9 @@ void DoGenerateSVG(std::string ProjM)
                                              pathPatch.c_str(),
                                              pathPatchPNG.c_str(),
                                              SVGTxt,
-                                             scale,4,
-                                             PFashion.param_boundary*scale,
-                                             PFashion.param_boundary*scale*0.75);
+                                             scale);//,4,
+                                             //PFashion.param_boundary*scale,
+                                             //PFashion.param_boundary*scale*0.75);
     //prepare the texure
     HasLayoutTxt=true;
     has_to_update_layout=true;
@@ -561,7 +576,12 @@ void TW_CALL SaveData(void *)
 void DoSmoothField()
 {
     PFashion.ComputeField();
-
+    if (hasFrames)
+    {
+        AManager.UpdateProjectionBasis();
+        //AManager.UpdateRestInfo();
+        //AManager.UpdateCurvatureAndStretch();
+    }
 }
 
 void TW_CALL RemoveAlongSymmetryLine(void *)
@@ -605,6 +625,7 @@ void DoBatchProcess()
     if (hasFrames)
     {
         AManager.UpdateProjectionBasis();
+        //AManager.UpdateRestInfo();
         //AManager.UpdateCurvatureAndStretch();
     }
     drawDefMesh=true;
@@ -685,17 +706,20 @@ void InitBar(QWidget *w) // AntTweakBar menu
     TwAddVarRW(barFashion,"drawRef",TW_TYPE_BOOLCPP, &drawRefMesh," label='Draw Reference'");
     TwAddVarRW(barFashion,"drawField",TW_TYPE_BOOLCPP, &drawfield," label='Draw Field'");
     TwAddVarRW(barFashion,"drawPlane",TW_TYPE_BOOLCPP, &drawSymmetryPlane," label='Draw Symm Plane'");
+    TwAddVarRW(barFashion,"drawConstr",TW_TYPE_BOOLCPP, &drawConstraints," label='Draw Constraints'");
+
 
     TwAddSeparator(barFashion,NULL,NULL);
 
     TwAddButton(barFashion,"SymmetrizeDef",SymmetrizeDeformed,0,"label='Symmetrize Deformed'");
 
-    TwEnumVal fieldmodes[3] = { {FMBoundary, "Boundary Only"},
+    TwEnumVal fieldmodes[4] = { {FMCurvatureOnly, "Curvature Only"},
+                                {FMBoundary, "Boundary Only"},
                                 {FMCurvature, "Curvature"},
                                 {FMCurvatureFrames, "Curvature Frames"}
                               };
 
-    TwType fieldMode = TwDefineEnum("FieldMode", fieldmodes, 3);
+    TwType fieldMode = TwDefineEnum("FieldMode", fieldmodes, 4);
     TwAddVarRW(barFashion, "Field Mode", fieldMode, &PFashion.FMode, " keyIncr='<' keyDecr='>' help='Change field mode.' ");
 
     TwAddButton(barFashion,"ComputeField",SmoothField,0,"label='Compute Field'");
@@ -739,6 +763,8 @@ void InitBar(QWidget *w) // AntTweakBar menu
     TwAddVarRW(barFashion,"MaxCompr",TW_TYPE_DOUBLE,&PFashion.max_compression," label='Max Compression'");
     TwAddVarRW(barFashion,"MaxTens",TW_TYPE_DOUBLE,&PFashion.max_tension," label='Max Tension'");
 
+
+    TwAddVarRW(barFashion,"SamplRate",TW_TYPE_DOUBLE,&PFashion.sample_rate," label='Sample Rate'");
 
     TwEnumVal priomode[3] = { {PrioModBlend, "Blend"},
                                {PrioModeLoop, "Loop"},
@@ -1033,8 +1059,8 @@ void MyGLWidget::paintGL ()
         glHint( GL_LINE_SMOOTH_HINT, GL_NICEST );
         glDepthRange(0,0.999);
         MeshDrawing<TraceMesh>::GLDrawEdgeUV(deformed_mesh);
-        glDepthRange(0,0.99);
-        MeshDrawing<TraceMesh>::GLDrawUVPolylines(deformed_mesh,UVPolyL,Color,Dots,ColorDots);
+//        glDepthRange(0,0.99);
+//        MeshDrawing<TraceMesh>::GLDrawUVPolylines(deformed_mesh,UVPolyL,Color,Dots,ColorDots);
         //deformed_mesh.GLDrawEdgeUV();
         if (draw_uv_and_3D)
         {
@@ -1080,6 +1106,13 @@ void MyGLWidget::paintGL ()
     glTranslate(-reference_mesh.bbox.Center());
     //glTranslate(CoordType(-reference_mesh.bbox.Diag()/2,0,0));
 
+//    if (PFashion.FMode==FMCurvatureOnly)//&&(drawfield))
+//    {
+//        std::pair<ScalarType,ScalarType> MinMaxQ;
+//        MinMaxQ=vcg::tri::Stat<TraceMesh>::ComputePerFaceQualityMinMax(deformed_mesh);
+//        vcg::GLField<TraceMesh>::GLDrawFaceField(deformed_mesh,false,false,0.007,
+//                                                 MinMaxQ.second,0,false);
+//    }
 
     if (do_anim && hasFrames)
     {
@@ -1121,7 +1154,8 @@ void MyGLWidget::paintGL ()
         glDisable(GL_TEXTURE_2D);
 
         //half_def_mesh.GLDrawSharpEdges(vcg::Color4b(255,0,0,255),10);
-        MeshDrawing<TraceMesh>::GLDrawSharpEdges(deformed_mesh,vcg::Color4b(255,0,0,255),10);
+        if (drawConstraints)
+            MeshDrawing<TraceMesh>::GLDrawSharpEdges(deformed_mesh,vcg::Color4b(255,0,0,255),10);
         //deformed_mesh.GLDrawSharpEdges(vcg::Color4b(255,0,0,255),10);
 
         GLDrawPatchEdges();
@@ -1143,13 +1177,14 @@ void MyGLWidget::paintGL ()
 
     if ((drawSymmetryPlane)&&(draw3D))
     {
-        GlDrawPlane(Symmetrizer<TraceMesh>::SymmPlane(),deformed_mesh.bbox.Diag()/2);//,deformed_mesh.bbox.Center());
+        GlDrawPlane(Symmetrizer<TraceMesh>::SymmPlane(),deformed_mesh.bbox.Diag()/3.8);//,deformed_mesh.bbox.Center());
     }
 
     if  (user_is_picking)
     {
         GPath.GLAddPoint(vcg::Point2i(PickX,PickY));
         GPath.GlDrawLastPath();
+
         //GPath.GlDrawLastPath();
         //TPath.GLAddPoint(vcg::Point2i(PickX,PickY));
         //TPath.GlDrawLastPath();
@@ -1227,6 +1262,7 @@ void MyGLWidget::paintGL ()
 
     //assert(glGetError()==GL_NO_ERROR);
 }
+
 
 void MyGLWidget::keyReleaseEvent (QKeyEvent * e)
 {

@@ -102,7 +102,7 @@ private:
         }
 
         std::sort(QVal.begin(),QVal.end());
-        int percUp=int(floor(QVal.size()*0.95+0.5));
+        int percUp=int(floor(QVal.size()*0.9+0.5));
         ScalarType trimUp=QVal[percUp];
 
         for (size_t i=0;i<mesh.vert.size();i++)
