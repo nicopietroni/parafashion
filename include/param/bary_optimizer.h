@@ -34,7 +34,7 @@ public:
     // ------------- CONFIG parameters ------------- // 
     // Penalize stretch on U/V axes 
     bool enable_stretch_eqs_ = true;
-    double stretch_coeff_ = 10.0;
+    double stretch_coeff_ = 5.0;
 
     // Place first vertex in (0,0)
     bool enable_set_seed_eqs_ = true;

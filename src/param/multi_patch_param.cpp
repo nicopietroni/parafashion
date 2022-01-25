@@ -1,5 +1,5 @@
 
-//#define USE_JSON_CONFIG
+#define USE_JSON_CONFIG
 
 #include "param/multi_patch_param.h"
 #include "param/metrics.h"
@@ -97,7 +97,7 @@ bool finalParamMultiPatch(const std::vector<Eigen::MatrixXd>& vec_V_3d,
             std::cout << "Saving init params..." << std::endl;
             Eigen::MatrixXd V2_init = ptr->getV2d();
             std::string path = config["debug"]["save_init_paths"];
-            igl::writeOBJ(path + "init_param.obj", V2_init, vec_F[patch_id]);
+            igl::writeOBJ(path + "init_param_" + std::to_string(patch_id) + ".obj", V2_init, vec_F[patch_id]);
         }
         #endif
 
