@@ -9,6 +9,7 @@
 #include <clocale>
 
 extern std::string pathDef,pathRef,pathFrames;
+extern QGLWidget *my_window;
 
 int main(int argc, char *argv[])
 {
@@ -50,7 +51,7 @@ int main(int argc, char *argv[])
     }
 
     MyGLWidget window;
-
+    my_window=&window;
     window.show();
     return app.exec();
 }

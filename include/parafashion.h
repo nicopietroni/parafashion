@@ -263,6 +263,7 @@ public:
     bool continuity_seams;
     bool continuity_darts;
     bool check_T_junction;
+    bool final_removal;
 
     void CleanMeshAttributes()
     {
@@ -600,7 +601,8 @@ public:
             PreRemoveStep=false;
             PTr.split_on_removal=true;
         }
-
+        if (!final_removal)
+            PreRemoveStep=false;
 
         PTr.InitTracer(100,DebugMSG);
         PTr.AllowRemoveConcave=true;
@@ -616,16 +618,16 @@ public:
         bool check_smooth_folds=false;
 
         if ((!use_darts)&&(!allow_self_glue))
-            RecursiveProcess<PTracerType>(PTr,100,only_needed,true,PreRemoveStep,false,false,check_smooth_folds,SmoothBeforeRemove,DebugMSG);
+            RecursiveProcess<PTracerType>(PTr,100,only_needed,final_removal,PreRemoveStep,false,false,check_smooth_folds,SmoothBeforeRemove,DebugMSG);
 
         if ((use_darts)&&(!allow_self_glue))
-            RecursiveProcessWithDarts<PTracerType>(PTr,100,only_needed,true,PreRemoveStep,false,false,check_smooth_folds,DartPriority,SmoothBeforeRemove,DebugMSG);
+            RecursiveProcessWithDarts<PTracerType>(PTr,100,only_needed,final_removal,PreRemoveStep,false,false,check_smooth_folds,DartPriority,SmoothBeforeRemove,DebugMSG);
 
         if ((!use_darts)&&(allow_self_glue))
-            RecursiveProcessForTexturing<PTracerType>(PTr,100,only_needed,true,PreRemoveStep,false,false,check_smooth_folds,SmoothBeforeRemove,DebugMSG);
+            RecursiveProcessForTexturing<PTracerType>(PTr,100,only_needed,final_removal,PreRemoveStep,false,false,check_smooth_folds,SmoothBeforeRemove,DebugMSG);
 
         if ((use_darts)&&(allow_self_glue))
-            RecursiveProcessForTexturingWithDarts<PTracerType>(PTr,100,only_needed,true,PreRemoveStep,false,false,check_smooth_folds,DartPriority,SmoothBeforeRemove,DebugMSG);
+            RecursiveProcessForTexturingWithDarts<PTracerType>(PTr,100,only_needed,final_removal,PreRemoveStep,false,false,check_smooth_folds,DartPriority,SmoothBeforeRemove,DebugMSG);
         //RecursiveProcessForTexturingWithDarts<PTracerType>(PTr,100,true,false,false,false,false,false,DebugMSG);
 
 
@@ -1088,6 +1090,7 @@ public:
         CheckUVIntersection=true;
         SmoothBeforeRemove=true;
         check_T_junction=true;
+        final_removal=true;
     }
 };
 

@@ -116,6 +116,8 @@ bool HasTxt=false;
 PathGL<TraceMesh> GPath;
 
 //#define MAX_DIST 0.05
+vcg::Similarityf trackView;
+
 AnimationManager<TraceMesh> AManager(deformed_mesh);
 Parafashion<TraceMesh> PFashion(deformed_mesh,reference_mesh,AManager);
 
@@ -133,6 +135,8 @@ std::vector<std::vector<UVCoordType > > UVPolyL;
 std::vector<vcg::Color4b> Color;
 std::vector<UVCoordType> Dots;
 vcg::Color4b ColorDots;
+
+QGLWidget *my_window;
 
 void GLDrawPoints(const std::vector<CoordType> &DrawPos,
                   const ScalarType &GLSize,const vcg::Color4b &Col)
@@ -775,6 +779,7 @@ void InitBar(QWidget *w) // AntTweakBar menu
     TwAddVarRW(barFashion,"CheckUV",TW_TYPE_BOOLCPP,&PFashion.CheckUVIntersection," label='Check UV Inters'");
     TwAddVarRW(barFashion,"SmoothRem",TW_TYPE_BOOLCPP,&PFashion.SmoothBeforeRemove," label='Smooth Before Remove'");
     TwAddVarRW(barFashion,"CheckT",TW_TYPE_BOOLCPP,&PFashion.check_T_junction," label='Check T Junction'");
+    TwAddVarRW(barFashion,"FinalRem",TW_TYPE_BOOLCPP,&PFashion.final_removal," label='Final Removal'");
 
     TwAddButton(barFashion,"BatchProcess",BatchProcess,0,"label='Batch Process'");
     //TwAddButton(barFashion,"BatchProcess 2",BatchProcess2,0,"label='Batch Process 2'");
@@ -832,6 +837,8 @@ QImage txt_image;
 MyGLWidget::MyGLWidget(QWidget *parent)
     : QGLWidget(QGLFormat(QGL::SampleBuffers), parent)
 {
+    trackView.SetIdentity();
+
     timerRot= new QTimer(this);
     connect(timerRot, SIGNAL(timeout()), this, SLOT(UpdateRot()));
 
@@ -1289,6 +1296,16 @@ void MyGLWidget::keyPressEvent (QKeyEvent * e)
         spacebar_being_pressed = true;
     }
 
+    if (e->key () == Qt::Key_1)
+    {
+        trackView=track.track;
+    }
+    if (e->key () == Qt::Key_2)
+    {
+        track.track=trackView;
+        //    reloadView=true;
+        my_window->update();
+    }
     TwKeyPressQt(e);
     updateGL ();
 }
