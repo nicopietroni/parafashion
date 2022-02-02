@@ -11,6 +11,7 @@
 #include <param/cloth_param.h>
 #include <param/multi_patch_param.h>
 #include <param/metrics.h>
+#include <param/multiple_poses_param.h>
 
 enum ParamMode{PMConformal,PMArap,PMCloth};
 
@@ -38,9 +39,51 @@ bool ClothParametrize(TriMeshType &mesh,
                       bool SelfIntCheck,
                       bool &DoIntersectUV)
 {
+    typedef typename TriMeshType::CoordType CoordType;
     Eigen::MatrixXd V;
     Eigen::MatrixXi F;
-    
+
+#ifdef MULTI_FRAME
+    assert(mesh.vert[0].FramePos.size()>0);
+    vcg::tri::MeshToMatrix<TriMeshType>::GetTriMeshData(mesh, F, V);
+    std::vector<Eigen::MatrixXd> vec_V_3d;
+    size_t numV=mesh.vert.size();
+    vec_V_3d.resize(mesh.vert[0].FramePos.size(),Eigen::MatrixXd(numV,3));
+    for (size_t i=0;i<mesh.vert.size();i++)
+        for (size_t j=0;j<mesh.vert[i].FramePos.size();j++)
+        {
+            CoordType CurrP=mesh.vert[i].FramePos[j];
+            vec_V_3d[j](i,0)=CurrP.X();
+            vec_V_3d[j](i,1)=CurrP.Y();
+            vec_V_3d[j](i,2)=CurrP.Z();
+//            vec_V_3d[j](i,0)=V(i,0);
+//            vec_V_3d[j](i,1)=V(i,1);
+//            vec_V_3d[j](i,2)=V(i,2);
+        }
+    bool success;
+    std::vector<std::vector<std::pair<int, int>>> vec_dart_duplicates;
+    std::vector<int> vec_dart_tips;
+    Eigen::MatrixXd V_uv=multiplePosesParam(vec_V_3d,F,error,vec_dart_duplicates,vec_dart_tips,success);
+    std::cout<<"Done MultiP"<<std::endl;
+    //std::cout<<"Test there are :"<<mesh.vert[0].FramePos.size()<<" frames"<<std::endl;
+    for (int i=0; i<(int)mesh.vert.size(); i++)
+    {
+        mesh.vert[i].T().P()[0] = V_uv(i,0);
+        mesh.vert[i].T().P()[1] = V_uv(i,1);
+    }
+    std::cout<<"Done Assign"<<std::endl;
+    if (success)
+    {
+        StretchU=std::vector<typename TriMeshType::ScalarType>(mesh.face.size(),0);
+        StretchV=std::vector<typename TriMeshType::ScalarType>(mesh.face.size(),0);
+    }
+    else
+    {
+        StretchU=std::vector<typename TriMeshType::ScalarType>(mesh.face.size(),1);
+        StretchV=std::vector<typename TriMeshType::ScalarType>(mesh.face.size(),1);
+    }
+    return success;
+#else
     vcg::tri::MeshToMatrix<TriMeshType>::GetTriMeshData(mesh, F, V);
     
     ClothParam cloth(V, F, error);
@@ -89,7 +132,10 @@ bool ClothParametrize(TriMeshType &mesh,
     //        StretchV.push_back(stretch_v(i));
     //    }
     return success;
+
+#endif
 }
+
 
 template <class TriMeshType>
 class Parametrizer
@@ -102,17 +148,7 @@ class Parametrizer
     
     //std::vector<typename TriMeshType::ScalarType> StretchU,StretchV;
 
-    static void SetQasDistorsion()
-    {
-        //        assert(StretchU.size()==mesh.face.size());
-        //        assert(StretchV.size()==mesh.face.size());
-        //        for (size_t i=0;i<mesh.face.size();i++)
-        //        {
-        //            ScalarType diffU=fabs(StretchU[i]-1);
-        //            ScalarType diffV=fabs(StretchV[i]-1);
-        //            mesh.face[i].Q()=(diffU > diffV) ? StretchU[i] : StretchV[i];
-        //        }
-    }
+
     
     //    static void FindDartTipFromPos(TriMeshType &mesh,
     //                                   std::vector<std::vector<PosType> > &PosSeq,
@@ -154,6 +190,10 @@ class Parametrizer
                                    std::vector<TriMeshType*> &SubMeshes,
                                    std::vector<std::pair<int,int> >  &OriginalToSub)
     {
+
+#ifdef MULTI_FRAME
+        std::cout<<"Test there are :"<<mesh.vert[0].FramePos.size()<<" frames"<<std::endl;
+#endif
         //deallocate
         for (size_t i=0;i<SubMeshes.size();i++)
             delete(SubMeshes[i]);
@@ -195,7 +235,6 @@ class Parametrizer
                 OriginalToSub[IndexF]=std::pair<int,int>(i,j);
             }
         }
-        
         //restore quality
         for (size_t i=0;i<mesh.face.size();i++)
             mesh.face[i].Q()=OldQ[i];
@@ -301,6 +340,40 @@ class Parametrizer
     }
 
 public:
+
+    static void SetQasClothDistorsion(TriMeshType &mesh)
+    {
+        for (size_t i=0;i<mesh.face.size();i++)
+        {
+            Eigen::MatrixXd V_2d(3, 3);
+            Eigen::MatrixXd V_3d(3, 3);
+            Eigen::MatrixXi F(1, 3);
+            Eigen::VectorXd stretch_u_vec,stretch_v_vec;
+
+            for (size_t j=0;j<3;j++)
+            {
+                V_2d(j,0)=mesh.face[i].WT(j).P().X();
+                V_2d(j,1)=mesh.face[i].WT(j).P().Y();
+                V_2d(j,2)=0;
+
+                V_3d(j,0)=mesh.face[i].V(j)->P().X();
+                V_3d(j,1)=mesh.face[i].V(j)->P().Y();
+                V_3d(j,2)=mesh.face[i].V(j)->P().Z();
+
+                F(0,j)=j;
+            }
+
+            measureStretchScore(V_2d,V_3d,F,stretch_u_vec,stretch_v_vec);
+            ScalarType V0=stretch_u_vec(0);
+            ScalarType V1=stretch_v_vec(0);
+            std::cout<<"V0"<<V0<<std::endl;
+            std::cout<<"V1"<<V1<<std::endl;
+            if (fabs(V0)>fabs(V1))
+                mesh.face[i].Q()=V0;
+            else
+                mesh.face[i].Q()=V1;
+        }
+    }
 
     static void SplitForGlobalParam(TriMeshType &mesh,
                                     std::vector<TriMeshType*> &SubMeshes,
@@ -541,15 +614,16 @@ public:
         if (UVMode==PMCloth)
         {
 
-            //            for (size_t i=0;i<SubMeshes.size();i++)
-            //            {
-            //                (*SubMeshes[i]).UpdateAttributes();
-            //                std::vector<typename TriMeshType::ScalarType> StretchU,StretchV;
-            //                bool DoIntersectUV;
-            //                ClothParametrize<TriMeshType>((*SubMeshes[i]),StretchU,StretchV,0.0,false,DoIntersectUV);
-            //                A+=vcg::tri::UV_Utils<TriMeshType>::PerVertUVArea(*SubMeshes[i]);
-            //            }
-
+            #ifdef MULTI_FRAME
+                        for (size_t i=0;i<SubMeshes.size();i++)
+                        {
+                            (*SubMeshes[i]).UpdateAttributes();
+                            std::vector<typename TriMeshType::ScalarType> StretchU,StretchV;
+                            bool DoIntersectUV;
+                            ClothParametrize<TriMeshType>((*SubMeshes[i]),StretchU,StretchV,0.0,false,DoIntersectUV);
+                            A+=vcg::tri::UV_Utils<TriMeshType>::PerVertUVArea(*SubMeshes[i]);
+                        }
+            #else
             //ge the seams
             //std::cout<<"0"<<std::endl;
 
@@ -615,6 +689,7 @@ public:
                 }
                 A+=vcg::tri::UV_Utils<TriMeshType>::PerVertUVArea(*SubMeshes[i]);
             }
+            #endif
         }
 
         ScalarType AbsDelta=math::Sqrt(A)*BorderPatch;

@@ -151,6 +151,13 @@ public:
 
     void TransferDirOnMesh(TriMeshType &target);
 
+    void InterpolatePosOnMesh(TriMeshType &target,size_t IndexFrame,
+                      std::vector<CoordType> &VertPos);
+
+    void InterpolateMultipleFramesOnMesh(TriMeshType &target,
+                                    size_t FrameInterval,
+                                    std::vector<std::vector<CoordType> > &VertPos,
+                                    bool add_rest=true);
  //   void UpdateRestInfo();
 
     AnimationManager(TriMeshType &_target_shape);

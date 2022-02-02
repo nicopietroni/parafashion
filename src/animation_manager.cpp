@@ -755,6 +755,70 @@ void AnimationManager<TriMeshType>::TransferDirOnMesh(TriMeshType &target)
 }
 
 template <class TriMeshType>
+void AnimationManager<TriMeshType>::InterpolatePosOnMesh(TriMeshType &target,size_t IndexFrame,
+                                                         std::vector<CoordType> &VertPos)
+{
+    VertPos.clear();
+
+    vcg::GridStaticPtr<FaceType,ScalarType> Grid;
+    Grid.Set(animated_template_shape.face.begin(),animated_template_shape.face.end());
+    ScalarType MaxD=animated_template_shape.bbox.Diag();
+
+    assert(IndexFrame<PerFramePos.size());
+    for (size_t i=0;i<target.vert.size();i++)
+    {
+        ScalarType MinD;
+        CoordType closestPt,normI,baryP;
+        FaceType *f=vcg::tri::GetClosestFaceBase(animated_template_shape,Grid,
+                                                 target.vert[i].P(),
+                                                 MaxD,MinD,closestPt,normI,baryP);
+
+        size_t IndexV0=vcg::tri::Index(animated_template_shape,f->V(0));
+        size_t IndexV1=vcg::tri::Index(animated_template_shape,f->V(1));
+        size_t IndexV2=vcg::tri::Index(animated_template_shape,f->V(2));
+
+        assert(IndexV0<PerFramePos[IndexFrame].size());
+        assert(IndexV1<PerFramePos[IndexFrame].size());
+        assert(IndexV2<PerFramePos[IndexFrame].size());
+
+        CoordType P0=PerFramePos[IndexFrame][IndexV0];
+        CoordType P1=PerFramePos[IndexFrame][IndexV1];
+        CoordType P2=PerFramePos[IndexFrame][IndexV2];
+
+        CoordType Interp = P0*baryP.X()+P1*baryP.Y()+P2*baryP.Z();
+        VertPos.push_back(Interp);
+    }
+}
+
+template <class TriMeshType>
+void AnimationManager<TriMeshType>::InterpolateMultipleFramesOnMesh(TriMeshType &target,
+                                                                    size_t FrameInterval,
+                                                                    std::vector<std::vector<CoordType> > &VertPos,
+                                                                    bool add_rest)
+{
+
+    VertPos.clear();
+    if (add_rest)
+    {
+        VertPos.resize(1);
+        for (size_t i=0;i<target.vert.size();i++)
+            VertPos[0].push_back(target.vert[i].P());
+    }
+
+    if (FrameInterval==0)return;
+
+    VertPos.resize(VertPos.size()+1);
+    InterpolatePosOnMesh(target,5,VertPos.back());
+//    size_t IntFrame=floor(0.5+NumFrames()/FrameInterval);
+//    IntFrame=std::max(IntFrame,(size_t)1);
+//    for (size_t i=0;i<NumFrames();i+=IntFrame)
+//    {
+//        VertPos.resize(VertPos.size()+1);
+//        InterpolatePosOnMesh(target,i,VertPos.back());
+//    }
+}
+
+template <class TriMeshType>
 AnimationManager<TriMeshType>::AnimationManager(TriMeshType &_target_shape):target_shape(_target_shape)
 {}
 

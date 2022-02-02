@@ -9,9 +9,10 @@ Eigen::MatrixXd multiplePosesParam(const std::vector<Eigen::MatrixXd>& vec_V_3d,
                                    const Eigen::MatrixXi& F,
                                    double stretch,
                                    const std::vector<std::vector<std::pair<int, int>>>& vec_dart_duplicates,
-                                   const std::vector<int>& vec_dart_tips){
+                                   const std::vector<int>& vec_dart_tips,
+                                   bool &success){
 
-    ClothParam main_cp(vec_V_3d[0], F);
+    ClothParam main_cp(vec_V_3d[0], F,stretch);
     std::vector<std::unique_ptr<ClothParam>> other_cps;
     for (int i=1; i<vec_V_3d.size(); i++){
         std::unique_ptr<ClothParam> ptr(new ClothParam(vec_V_3d[i], F, stretch, vec_dart_duplicates, vec_dart_tips));
@@ -28,6 +29,6 @@ Eigen::MatrixXd multiplePosesParam(const std::vector<Eigen::MatrixXd>& vec_V_3d,
         main_cp.stealSubBs(other_cps);
         main_cp.paramAttempt(1);
     }
-
+    success = main_cp.constraintSatisfied() ;//&& main_cp.checkSelfIntersect();
     return main_cp.getV2d();
 }

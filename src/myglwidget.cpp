@@ -58,6 +58,7 @@
 #include "wrap/qt/Outline2ToQImage.h"
 #include <svg_exporter.h>
 #include "parafashion.h"
+#include <vcg/complex/algorithms/polygonal_algorithms.h>
 //#include "parafashion_interface.h"
 
 std::string pathRef="";
@@ -98,7 +99,11 @@ bool drawParam=false;
 bool matchcurvature=false;
 bool hasFrames=false;
 bool drawConstraints=true;
+
 int xMouse,yMouse;
+
+int oldFrame=-1;
+int selectedF=-1;
 
 //typedef FieldSmoother<TraceMesh> FieldSmootherType;
 //FieldSmootherType::SmoothParam FieldParam;
@@ -128,7 +133,7 @@ GLuint layoutTxtIdx=0;
 bool HasLayoutTxt=false;
 bool has_to_update_layout=false;
 
-#define COLOR_LIMITS 1.2
+#define COLOR_LIMITS 1//1.2
 
 typedef typename vcg::Point2<ScalarType> UVCoordType;
 std::vector<std::vector<UVCoordType > > UVPolyL;
@@ -195,6 +200,22 @@ void GLDrawPoints(const std::vector<CoordType> &DrawPos,
 
 //    glPopAttrib();
 //}
+
+void UpdateSelectedFrameIfneeded()
+{
+    if (AManager.NumFrames()==0)return;
+    if (oldFrame==selectedF)return;
+    selectedF=selectedF % AManager.NumFrames();
+
+    if (selectedF==0)
+        deformed_mesh.RestoreRPos();
+    else
+        AManager.UpdateToFrame(selectedF,false,false);
+
+    oldFrame=selectedF;
+
+    my_window->update();
+}
 
 template <class ScalarType>
 void GlDrawPlane(const vcg::Plane3<ScalarType> &Pl,
@@ -343,9 +364,17 @@ void DoColorByDistortion()
     for (size_t i=0;i<deformed_mesh.face.size();i++)
         FaceQ.push_back(deformed_mesh.face[i].Q());
 
-    vcg::tri::Distortion<TraceMesh,true>::SetQasDistorsion(deformed_mesh,vcg::tri::Distortion<TraceMesh,true>::EdgeComprStretch);
-    //ClothParam::getStretchStats()
+    if(PFashion.UVMode==PMCloth)
+         Parametrizer<TraceMesh>::SetQasClothDistorsion(deformed_mesh);
+    if(PFashion.UVMode==PMArap)
+        vcg::tri::Distortion<TraceMesh,true>::SetQasDistorsion(deformed_mesh,vcg::tri::Distortion<TraceMesh,true>::ARAPDist);
+    if(PFashion.UVMode==PMConformal)
+        vcg::tri::Distortion<TraceMesh,true>::SetQasDistorsion(deformed_mesh,vcg::tri::Distortion<TraceMesh,true>::EdgeDist);
+
     //copy per vertex
+    std::pair<ScalarType,ScalarType> test=vcg::tri::Stat<TraceMesh>::ComputePerFaceQualityMinMax(deformed_mesh);
+    std::cout<<"MinV:"<<test.first<<std::endl;
+    std::cout<<"MaxV:"<<test.second<<std::endl;
     vcg::tri::UpdateQuality<TraceMesh>::VertexFromFace(deformed_mesh);
 
     //    //clamp
@@ -375,9 +404,11 @@ void DoColorByDistortion()
                                                          Val);
     }
 
+    //vcg::tri::UpdateColor<TraceMesh>::PerVertexQualityRamp(deformed_mesh);
+
     //vcg::tri::UpdateColor<TraceMesh>::PerVertexQualityRamp(deformed_mesh,MAX_DIST,-MAX_DIST);
 
-    //cut everything bigger than a threshold
+    //restore old quality
     for (size_t i=0;i<deformed_mesh.face.size();i++)
     {
         deformed_mesh.face[i].Q()=FaceQ[i];
@@ -625,7 +656,7 @@ void UpdateBaseColorMesh()
 void DoBatchProcess()
 {
     std::vector<bool> Soft(GPath.PickedPoints.size(),true);
-    PFashion.BatchProcess(GPath.PickedPoints);//,Soft);
+    PFashion.BatchProcess(GPath.PickedPoints,AManager);//,Soft);
     if (hasFrames)
     {
         AManager.UpdateProjectionBasis();
@@ -698,6 +729,9 @@ void InitBar(QWidget *w) // AntTweakBar menu
     TwAddVarRW(barFashion, "Field Anim Mode", fieldAnimMode, &FAnimMode, " keyIncr='<' keyDecr='>' help='Change Field Anim mode.' ");
 
     TwAddVarRW(barFashion,"doAnim",TW_TYPE_BOOLCPP, &do_anim," label='Animate'");
+
+
+    TwAddVarRW(barFashion,"currF",TW_TYPE_INT32, &selectedF," label='CurrentFrame'");
 
 
 
@@ -780,6 +814,9 @@ void InitBar(QWidget *w) // AntTweakBar menu
     TwAddVarRW(barFashion,"SmoothRem",TW_TYPE_BOOLCPP,&PFashion.SmoothBeforeRemove," label='Smooth Before Remove'");
     TwAddVarRW(barFashion,"CheckT",TW_TYPE_BOOLCPP,&PFashion.check_T_junction," label='Check T Junction'");
     TwAddVarRW(barFashion,"FinalRem",TW_TYPE_BOOLCPP,&PFashion.final_removal," label='Final Removal'");
+#ifdef MULTI_FRAME
+    TwAddVarRW(barFashion,"UseFr",TW_TYPE_BOOLCPP,&PFashion.useFrames," label='Use Frames'");
+#endif
 
     TwAddButton(barFashion,"BatchProcess",BatchProcess,0,"label='Batch Process'");
     //TwAddButton(barFashion,"BatchProcess 2",BatchProcess2,0,"label='Batch Process 2'");
@@ -999,6 +1036,7 @@ static void GLDrawSVGLayout(size_t sizeU,
 
 void MyGLWidget::paintGL ()
 {
+    UpdateSelectedFrameIfneeded();
     if (has_to_update_layout)
     {
         glGenTextures( 1, & layoutTxtIdx );
@@ -1296,11 +1334,11 @@ void MyGLWidget::keyPressEvent (QKeyEvent * e)
         spacebar_being_pressed = true;
     }
 
-    if (e->key () == Qt::Key_1)
+    if (e->key () == Qt::Key_Q)
     {
         trackView=track.track;
     }
-    if (e->key () == Qt::Key_2)
+    if (e->key () == Qt::Key_W)
     {
         track.track=trackView;
         //    reloadView=true;

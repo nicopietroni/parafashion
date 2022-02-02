@@ -1,5 +1,5 @@
 
-#define USE_JSON_CONFIG
+//#define USE_JSON_CONFIG
 
 #include "param/multi_patch_param.h"
 #include "param/metrics.h"

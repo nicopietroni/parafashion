@@ -244,6 +244,7 @@ public:
     FieldMode FMode;
     ParamMode UVMode;
 
+    bool useFrames;
     bool match_valence;
     bool check_stress;
     bool use_darts;
@@ -557,6 +558,7 @@ public:
 
         half_def_mesh.UpdateAttributes();
 
+
         VertexFieldGraph<TriMeshType> VGraph(half_def_mesh);
         VGraph.InitGraph(DebugMSG);
 
@@ -790,6 +792,7 @@ public:
 
     void DoParametrize()
     {
+
         Parametrizer<TriMeshType>::Parametrize(deformed_mesh,UVMode,
                                                SubMeshes, MeshToMesh,
                                                VertToVert,DartTipVert,
@@ -1021,6 +1024,7 @@ public:
     }
 
     void BatchProcess(const std::vector<std::vector<CoordType> > &PickedPoints,
+                      AnimationManager<TraceMesh> &AManager,
                       //const std::vector<bool > &Soft,
                       bool writeDebug=false,
                       bool writeTime=true)
@@ -1038,13 +1042,86 @@ public:
         //        //TEST, REMOVE CONSTRAINT
         //        vcg::tri::io::ExporterPLY<TriMeshType>::Save(half_def_mesh,"dede1.ply");
         //        //TEST, REMOVE CONSTRAINTS
+        //add the frames
 
+#ifdef MULTI_FRAME
+        //std::vector<CoordType> OrigPos;
+        std::vector<std::vector<CoordType> > VertPos;
+        if (useFrames)
+            AManager.InterpolateMultipleFramesOnMesh(half_def_mesh,3,VertPos);
+        else
+            AManager.InterpolateMultipleFramesOnMesh(half_def_mesh,0,VertPos);
+
+        assert(VertPos.size()>0);
+        for (size_t frame=0;frame<VertPos.size();frame++)
+            for (size_t i=0;i<VertPos[frame].size();i++)
+                half_def_mesh.vert[i].FramePos.push_back(VertPos[frame][i]);
+
+//        for (size_t i=0;i<half_def_mesh.vert.size();i++)
+//            half_def_mesh.vert[i].FramePos.push_back(half_def_mesh.vert[i].P());
+
+//        int numF=AManager.NumFrames();
+//        if (numF>1)
+//        {
+//            size_t IndexF0=0;
+//            size_t IndexF1=numF/2;
+//            IndexF1=std::max(IndexF1,(size_t)1);
+//            std::vector<CoordType> VertPosF0,VertPosF1;
+//            AManager.GetPosOfMesh(half_def_mesh,IndexF0,VertPosF0);
+//            AManager.GetPosOfMesh(half_def_mesh,IndexF1,VertPosF1);
+//            for (size_t i=0;i<half_def_mesh.vert.size();i++)
+//            {
+//                half_def_mesh.vert[i].FramePos.push_back(VertPosF0[i]);
+//                half_def_mesh.vert[i].FramePos.push_back(VertPosF1[i]);
+//            }
+//        }
+
+        //std::cout<<"Test 0 there are :"<<half_def_mesh.vert[0].FramePos.size()<<" frames"<<std::endl;
+#endif
+        std::cout<<"TRACING"<<std::endl;
         TracePatch(false,writeDebug);
 
+        std::cout<<"REMOVING SYMMETRY"<<std::endl;
         if (remove_along_symmetry)
             RemoveOnSymmetryPathIfPossible();
 
+        std::cout<<"FINAL PARAMETRIZATION"<<std::endl;
         size_t t3=clock();
+#ifdef MULTI_FRAME
+
+        //std::vector<std::vector<CoordType> > VertPos;
+        if (useFrames)
+            AManager.InterpolateMultipleFramesOnMesh(deformed_mesh,3,VertPos);
+        else
+            AManager.InterpolateMultipleFramesOnMesh(deformed_mesh,0,VertPos);
+
+        assert(VertPos.size()>0);
+        for (size_t frame=0;frame<VertPos.size();frame++)
+            for (size_t i=0;i<VertPos[frame].size();i++)
+                deformed_mesh.vert[i].FramePos.push_back(VertPos[frame][i]);
+
+//        //std::vector<CoordType> OrigPos;
+//        for (size_t i=0;i<deformed_mesh.vert.size();i++)
+//            deformed_mesh.vert[i].FramePos.push_back(deformed_mesh.vert[i].P());
+
+//        int numF=AManager.NumFrames();
+//        if (numF>1)
+//        {
+//            size_t IndexF0=0;
+//            size_t IndexF1=numF/2;
+//            IndexF1=std::max(IndexF1,(size_t)1);
+//            std::vector<CoordType> VertPosF0,VertPosF1;
+//            AManager.GetPosOfMesh(deformed_mesh,IndexF0,VertPosF0);
+//            AManager.GetPosOfMesh(deformed_mesh,IndexF1,VertPosF1);
+//            for (size_t i=0;i<deformed_mesh.vert.size();i++)
+//            {
+//                deformed_mesh.vert[i].FramePos.push_back(VertPosF0[i]);
+//                deformed_mesh.vert[i].FramePos.push_back(VertPosF1[i]);
+//            }
+//        }
+
+        //std::cout<<"Test 0 there are :"<<half_def_mesh.vert[0].FramePos.size()<<" frames"<<std::endl;
+#endif
         DoParametrize();
         size_t t4=clock();
         if (writeTime)
@@ -1082,15 +1159,16 @@ public:
         dart_intervals=3;
         continuity_seams=true;
         continuity_darts =true;
-        use_darts=true;
+        use_darts=false;
         allow_self_glue=true;
-        remove_along_symmetry=true;
+        remove_along_symmetry=false;
         remesh_on_test=false;
         UVMode=PMCloth;
         CheckUVIntersection=true;
         SmoothBeforeRemove=true;
         check_T_junction=true;
         final_removal=true;
+        useFrames=false;
     }
 };
 
