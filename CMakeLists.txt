@@ -18,14 +18,19 @@ find_package(Qt5 COMPONENTS Widgets OpenGL Svg REQUIRED) # redundant with libigl
 add_definitions(-DGLEW_STATIC)
 add_subdirectory(lib/glew-cmake EXCLUDE_FROM_ALL)
 
-add_subdirectory(lib/libigl)
+if (NOT TARGET igl::core)
+  add_subdirectory(lib/libigl)
+endif() 
 add_subdirectory(lib/vcglib)
+add_subdirectory(lib/garment-flattening)
 include_directories(lib/vcglib)
 include_directories(lib/tracing/include)
 include_directories(lib/AntTweakBar/include)
 include_directories(lib/Clipper)
 
-add_subdirectory(lib/json)
+if (NOT TARGET nlohmann_json)
+  add_subdirectory(lib/json)
+endif() 
 include_directories(lib/json/include)
 
 include_directories(lib/libigl/include)
@@ -58,7 +63,7 @@ file(GLOB SRCFILES src/*.cpp
 file(GLOB SRCPARAM src/param/*.cpp)
 
 add_executable(parafashion ${SRCFILES} apps/parafashion.cpp ${SRCPARAM})
-target_link_libraries(parafashion ${COMMON_LIBRARIES} nlohmann_json) # igl::triangle) weird problems with igl::triangle...
+target_link_libraries(parafashion ${COMMON_LIBRARIES} nlohmann_json woven_param) # igl::triangle) weird problems with igl::triangle...
 include_directories(include)
 
 file(GLOB TEXTILESRC # TODO REMOVE...
