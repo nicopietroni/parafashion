@@ -34,8 +34,6 @@ int main(int argc, char *argv[])
         return 1;
     }
 
-    assert(argc>2);
-
     pathDef=std::string(argv[1]);
     std::cout <<"Loading Deformed Mesh "<< pathDef << std::endl;
 

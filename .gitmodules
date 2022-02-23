@@ -16,3 +16,6 @@
 [submodule "lib/garment-flattening"]
 	path = lib/garment-flattening
 	url = git@github.com:CorentinDumery/garment-flattening.git
+[submodule "lib/AntTweakBar"]
+	path = lib/AntTweakBar
+	url = https://github.com/tschw/AntTweakBar.git
