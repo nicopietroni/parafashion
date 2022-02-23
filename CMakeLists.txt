@@ -32,7 +32,6 @@ if (NOT TARGET nlohmann_json)
   add_subdirectory(lib/json)
 endif() 
 include_directories(lib/json/include)
-
 include_directories(lib/libigl/include)
 
 link_directories(AntTweakBar lib/AntTweakBar/lib)
@@ -40,7 +39,7 @@ link_directories(AntTweakBar lib/AntTweakBar/lib)
 include_directories(lib/Directional/include)
 
 # libraries which will be included in all apps:
-SET(COMMON_LIBRARIES 
+SET(VCG_UI_LIBS 
   Qt5::Widgets 
   Qt5::OpenGL 
   Qt5::Svg
@@ -51,8 +50,8 @@ SET(COMMON_LIBRARIES
   libglew_static
 )
 
-file(GLOB SRCFILES src/*.cpp 
-    lib/vcglib/wrap/ply/plylib.cpp # TODO cleanup ?
+file(GLOB SRC_VCGLIB src/*.cpp 
+    lib/vcglib/wrap/ply/plylib.cpp
     lib/vcglib/wrap/gui/trackball.cpp 
     lib/vcglib/wrap/gui/trackmode.cpp
     lib/vcglib/wrap/qt/anttweakbarMapperNew.cpp
@@ -62,34 +61,10 @@ file(GLOB SRCFILES src/*.cpp
 
 file(GLOB SRCPARAM src/param/*.cpp)
 
-add_executable(parafashion ${SRCFILES} apps/parafashion.cpp ${SRCPARAM})
-target_link_libraries(parafashion ${COMMON_LIBRARIES} nlohmann_json woven_param) # igl::triangle) weird problems with igl::triangle...
+add_executable(parafashion ${SRC_VCGLIB} apps/parafashion.cpp ${SRCPARAM})
+target_link_libraries(parafashion ${VCG_UI_LIBS} nlohmann_json woven_param)
 include_directories(include)
 
-file(GLOB TEXTILESRC # TODO REMOVE...
-  src/textile_param/ourglwidget.cpp 
-  src/textile_param/*.cpp 
-  lib/vcglib/wrap/ply/plylib.cpp
-  lib/vcglib/wrap/gui/trackball.cpp
-  lib/vcglib/wrap/gui/trackmode.cpp
-  lib/vcglib/wrap/qt/anttweakbarMapperNew.cpp
-  #lib/libigl/principal_curvature.cpp
-)
-
-add_executable(textile_param apps/textile_param.cpp ${TEXTILESRC})
-target_link_libraries(textile_param 
-  Qt5::Widgets 
-  Qt5::OpenGL 
-  Qt5::Svg
-  ${OPENGL_LIBRARIES} 
-  ${GLUT_LIBRARY}
-  AntTweakBar
-  libglew_static
-  ${COMMON_LIBRARIES}
-)
-target_include_directories(textile_param PUBLIC include/textile_param)
-
-file(GLOB PARAMSRC src/param/*.cpp)
-add_executable(param apps/param.cpp ${PARAMSRC})
+add_executable(param apps/param.cpp ${SRCPARAM})
 target_link_libraries(param igl::opengl_glfw igl::core igl::opengl_glfw_imgui)
 target_include_directories(param PUBLIC include/param)

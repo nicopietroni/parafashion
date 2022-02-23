@@ -1,7 +1,6 @@
 ############################ CONFIGURATION ############################
 
 VCGLIBPATH = ./lib/vcglib
-#EIGENPATH  = ./lib/oldlibigl/external/nanogui/ext/eigen
 EIGENPATH  = $$VCGLIBPATH/eigenlib/
 LIBIGLPATH = ./lib/libigl/
 DIRECTIONALPATH = ./lib/Directional/include/
