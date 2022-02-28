@@ -25,6 +25,11 @@ using std::chrono::duration_cast;
 using std::chrono::microseconds;
 #endif
 
+#define COUNT_PARAM_CALLS
+#ifdef COUNT_PARAM_CALLS
+int param_calls_count = 0;
+#endif
+
 enum PatchMode{PMMinTJuncions,PMAvgTJuncions,PMAllTJuncions};
 
 template <class TriMeshType>
@@ -340,9 +345,14 @@ public:
         ScalarType operator()(MeshType &m) const
         {
 
-#ifdef PRINT_PARAFASHION_TIMING
+            #ifdef PRINT_PARAFASHION_TIMING
             steady_clock::time_point pre_param = steady_clock::now();
-#endif
+            #endif
+
+            #ifdef COUNT_PARAM_CALLS
+            param_calls_count ++;
+            #endif
+
             if (RemeshOnTest())
                 Remesh(m);
             //RemeshByDeci(m);
@@ -365,11 +375,11 @@ public:
                 bool success = ClothParametrize<TriMeshType>(m, StretchU,StretchV,
                                                              MaxQ(),ContinuousCheckSelfInt(),
                                                              DoSelfInt); // quality-check param, NOT the final one you see on screen
-#ifdef PRINT_PARAFASHION_TIMING
+                #ifdef PRINT_PARAFASHION_TIMING
                 steady_clock::time_point post_param = steady_clock::now();
                 int param_time = duration_cast<microseconds>(post_param - pre_param).count();
                 std::cout << "Param time : " << param_time << " [µs]" << std::endl;
-#endif
+                #endif
                 //if ((!success)||(DoSelfInt)) return 1000;
                 ScalarType A=0;
                 if (DoSelfInt)
@@ -405,11 +415,11 @@ public:
             if (UVMode()==PMConformal)
             {
                 vcg::tri::InitializeArapWithLSCM(m,0);
-#ifdef PRINT_PARAFASHION_TIMING
+                #ifdef PRINT_PARAFASHION_TIMING
                 steady_clock::time_point post_param = steady_clock::now();
                 int param_time = duration_cast<microseconds>(post_param - pre_param).count();
                 std::cout << "Param time : " << param_time << " [µs]" << std::endl;
-#endif
+                #endif
                 vcg::tri::Distortion<TraceMesh,false>::SetQasDistorsion(m,vcg::tri::Distortion<TraceMesh,false>::EdgeComprStretch);
                 ScalarType A=0;
                 for (size_t i=0;i<m.face.size();i++)
@@ -1131,6 +1141,10 @@ public:
             std::cout<<"Time Patch Tracing:"<<(t3-t2)/(ScalarType)CLOCKS_PER_SEC<<std::endl;
             std::cout<<"Time Parametrize:"<<(t4-t3)/(ScalarType)CLOCKS_PER_SEC<<std::endl;
         }
+
+        #ifdef COUNT_PARAM_CALLS
+        std::cout << "#param calls: " << param_calls_count << std::endl;
+        #endif
     }
 
     ~Parafashion()
