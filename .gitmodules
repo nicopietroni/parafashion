@@ -19,3 +19,6 @@
 [submodule "lib/AntTweakBar"]
 	path = lib/AntTweakBar
 	url = https://github.com/tschw/AntTweakBar.git
+[submodule "lib/xfield_tracer"]
+	path = lib/xfield_tracer
+	url = https://github.com/nicopietroni/xfield_tracer

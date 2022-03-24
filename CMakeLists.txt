@@ -25,7 +25,7 @@ add_subdirectory(lib/vcglib)
 add_subdirectory(lib/garment-flattening)
 add_subdirectory(lib/AntTweakBar)
 include_directories(lib/vcglib)
-include_directories(lib/tracing/include)
+include_directories(lib/xfield_tracer)
 include_directories(lib/AntTweakBar/TweakBar/include)
 include_directories(lib/Clipper)
 
