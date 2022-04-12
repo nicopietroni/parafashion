@@ -19,3 +19,6 @@
 [submodule "lib/xfield_tracer"]
 	path = lib/xfield_tracer
 	url = https://github.com/nicopietroni/xfield_tracer
+[submodule "lib/garment-flattening"]
+	path = lib/garment-flattening
+	url = https://github.com/CorentinDumery/garment-flattening.git
