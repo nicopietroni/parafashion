@@ -41,8 +41,9 @@ FINAL_RELEASE {
 }
 
 macx {
-    QMAKE_MACOSX_DEPLOYMENT_TARGET = 10.13
-    QMAKE_MAC_SDK = macosx10.13
+    CONFIG+=sdk_no_version_check
+    QMAKE_CXXFLAGS_WARN_ON += -Wno-extra
+    QMAKE_CXXFLAGS_WARN_ON += -Wno-int-in-bool-context
 }
 
 
@@ -61,6 +62,8 @@ INCLUDEPATH += $$EIGENPATH
 INCLUDEPATH += $$TRACINGPATH
 INCLUDEPATH += $$GLEWPATH/include
 INCLUDEPATH += $$CLIPPERPATH
+INCLUDEPATH += $$JSONPATH
+INCLUDEPATH += $$CLOTHPARAMPATH
 
 #libigl
 INCLUDEPATH += $$LIBIGLPATH/include
@@ -68,22 +71,28 @@ HEADERS += include/symmetrizer.h \
     include/parametrizer.h \
     include/svg_exporter.h \
     include/field_computation.h \
-    include/parafashion_interface.h \
     include/animation_manager.h \
-    include/trace_path_ui.h \
     include/myglwidget.h \
     include/parafashion.h \
     include/smooth_field_directional.h \
     $$LIBIGLPATH/include/igl/principal_curvature.h \
     $$LIBIGLPATH/include/igl/copyleft/comiso/nrosy.h \
     $$VCGLIBPATH/wrap/qt/Outline2ToQImage.h \
+    $$TRACINGPATH/tracing/patch_tracer.h \
+    $$TRACINGPATH/tracing/tracer_interface.h \
+    $$TRACINGPATH/tracing/patch_manager.h \
 
 SOURCES += \
     $$LIBIGLPATH/include/igl/principal_curvature.cpp \
     $$LIBIGLPATH/include/igl/copyleft/comiso/nrosy.cpp \
     $$VCGLIBPATH/wrap/qt/Outline2ToQImage.cpp \
-    src/animation_manager.cpp \
-    src/field_computation.cpp \
+    ./lib/garment-flattening/src/param/bary_optimizer.cpp \
+    ./lib/garment-flattening/src/param/cloth_param.cpp \
+    ./lib/garment-flattening/src/param/dart.cpp \
+    ./lib/garment-flattening/src/param/metrics.cpp \
+    ./lib/garment-flattening/src/param/multi_patch_param.cpp \
+    ./lib/garment-flattening/src/param/param_utils.cpp \
+    ./lib/garment-flattening/src/param/self_intersect.cpp \
 
 #AntTweakBar
 INCLUDEPATH += $$ANTTWEAKBARPATH/include
@@ -92,6 +101,7 @@ win32{ # Awful problem with windows..
     DEFINES += NOMINMAX
 }
 
+#DEFINES +=MULTI_FRAME
 #glew
 #LIBS += -lGLU
 INCLUDEPATH += ./include/
@@ -101,7 +111,8 @@ SOURCES += $$GLEWPATH/src/glew.c
 
 # Mac specific Config required to avoid to make application bundles
 macx{
-    QMAKE_POST_LINK +="cp -P ../../../code/lib/AntTweakBar1.16/lib/libAntTweakBar.dylib . ; "
+    #QMAKE_POST_LINK +="cp -P ../../../code/lib/AntTweakBar1.16/lib/libAntTweakBar.dylib . ; "
+    QMAKE_POST_LINK +="cp -P $$ANTTWEAKBARPATH/lib/libAntTweakBar.dylib . ; "
     QMAKE_POST_LINK +="install_name_tool -change ../lib/libAntTweakBar.dylib ./libAntTweakBar.dylib $$TARGET ; "
     DEPENDPATH += .
 }
