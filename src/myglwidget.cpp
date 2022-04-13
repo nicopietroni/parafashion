@@ -690,8 +690,8 @@ void TW_CALL TestCol(void *)
 void SetFieldBarSizePosition(QWidget *w)
 {
     int params[2];
-    params[0] = QTDeviceWidth(w) / 2.0; // AntTweakBar Menu size here
-    params[1] = QTDeviceHeight(w)*1.5;
+    params[0] = QTDeviceWidth(w) / 5.0; // AntTweakBar Menu size here
+    params[1] = QTDeviceHeight(w)*0.8;
     TwSetParam(barFashion, NULL, "size", TW_PARAM_INT32, 2, params);
     params[0] = QTLogicalToDevice(w, 10);
     params[1] = 30;//QTDeviceHeight(w) - params[1] - QTLogicalToDevice(w, 10);
