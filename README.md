@@ -38,7 +38,7 @@ journal = {ACM Trans. Graph.},
 month = {jul},
 articleno = {155},
 numpages = {17},
-keywords = {geometry processing, quad-meshing, modelling}
+keywords = {geometry processing, modelling, fashion design}
 }
 ```
 
@@ -69,7 +69,7 @@ Then, simply run parafashion with an obj or ply mesh as command-line argument:
 
 Open the .pro file, all the path in the .pri should be already ok.
 
-## The output of quadwild consists of several files:
+## The output of parafashion consists of several files:
 - The output patch subdivided mesh (suffix patch.obj): Per face, per patch colored mesh.
 - The output patch index per face (suffix patch.txt)
 - The output per face per vert UV (suffix UV.txt)
