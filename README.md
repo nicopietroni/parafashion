@@ -1,11 +1,11 @@
 # Computational Pattern Making from 3D Garment Models
 
-[Anonymous Author0](www.google.com), 
-[Anonymous Author1](www.google.com),
-[Anonymous Author2](www.google.com),
-[Anonymous Author3](www.google.com),
-[Anonymous Author4](www.google.com),
-[Anonymous Author5](www.google.com),
+[Nico Pietroni](www.nicopietroni.com), 
+[Corentin Dumery](https://corentindumery.github.io),
+[Raphael Falque](https://profiles.uts.edu.au/Raphael.Guenot-Falque),
+[Mark Liu](http://www.drmarkliu.com),
+[Teresa Vidal-Calleja](https://profiles.uts.edu.au/Teresa.VidalCalleja),
+[Olga Sorkine-Hornung](https://igl.ethz.ch/people/sorkine/),
 <br/>
 *SIGGRAPH 2022*<br/>
 
@@ -14,13 +14,13 @@
 ## Abstract
 We propose a method for computing a sewing pattern of a given 3D garment model. Our algorithm segments an input 3D garment shape into patches and computes their 2D parameterization, resulting in pattern pieces that can be cut out of fabric and sewn together to manufacture the garment. Unlike the general state-of-the-art approaches for surface cutting and flattening, our method explicitly targets garment fabrication. It accounts for the unique properties and constraints of tailoring, such as seam symmetry, the usage of darts, fabric grain alignment, and a flattening distortion measure that models woven fabric deformation, respecting its anisotropic behavior. We bootstrap a recent patch layout approach developed for quadrilateral remeshing and adapt it to the purpose of computational pattern making, ensuring that the deformation of each pattern piece stays within prescribed bounds of cloth stress. While our algorithm can automatically produce the sewing patterns, it is fast enough to admit user input to creatively iterate on the pattern design. Our method can take several target poses of the 3D garment into account and integrate them into the sewing pattern design. We demonstrate results on both skintight and loose garments, showcasing the versatile application possibilities of our approach.
 
-Data: [www.google.com](TBD)<br />
-Website: [www.google.com](TBD)<br />
+Data: [http://www.quadmesh.cloud/parafashion/Figures_Pattern_Making.zip](http://www.quadmesh.cloud/parafashion/Figures_Pattern_Making.zip)<br />
+#Website: [www.google.com](TBD)<br />
 DOI: [TBD](https://doi.org/???) ACM Transactions on Graphics (SIGGRAPH), 2022
 
 **BibTex**
 ```
-@article{???,
+@article{,
 author = {Anonymous},
 title = {Computational Pattern Making from 3D Garment Models
 },
@@ -28,23 +28,22 @@ year = {2022},
 issue_date = {August 2022},
 publisher = {Association for Computing Machinery},
 address = {New York, NY, USA},
-volume = {?},
-number = {?},
+volume = {41},
+number = {4},
 issn = {?},
 url = {https://doi.org/??},
 doi = {??},
 abstract = {We propose a method for computing a sewing pattern of a given 3D garment model. Our algorithm segments an input 3D garment shape into patches and computes their 2D parameterization, resulting in pattern pieces that can be cut out of fabric and sewn together to manufacture the garment. Unlike the general state-of-the-art approaches for surface cutting and flattening, our method explicitly targets garment fabrication. It accounts for the unique properties and constraints of tailoring, such as seam symmetry, the usage of darts, fabric grain alignment, and a flattening distortion measure that models woven fabric deformation, respecting its anisotropic behavior. We bootstrap a recent patch layout approach developed for quadrilateral remeshing and adapt it to the purpose of computational pattern making, ensuring that the deformation of each pattern piece stays within prescribed bounds of cloth stress. While our algorithm can automatically produce the sewing patterns, it is fast enough to admit user input to creatively iterate on the pattern design. Our method can take several target poses of the 3D garment into account and integrate them into the sewing pattern design. We demonstrate results on both skintight and loose garments, showcasing the versatile application possibilities of our approach.},
 journal = {ACM Trans. Graph.},
-month = {jul},
-articleno = {155},
-numpages = {17},
+articleno = {157},
+numpages = {14},
 keywords = {geometry processing, modelling, fashion design}
 }
 ```
 
 ### Download
 ```bash
-git clone --recursive https://github.com/???/parafashion
+git clone --recursive https://github.com/nicopietroni/parafashion
 git submodule update --init --recursive
 ```
 
