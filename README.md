@@ -21,7 +21,7 @@ DOI: [TBD](https://doi.org/???) ACM Transactions on Graphics (SIGGRAPH), 2022
 **BibTex**
 ```
 @article{,
-author = {Anonymous},
+author = {Pietroni, Nico and Dumery, Corentin and Falque, Raphael and Liu, Mark and Vidal-Calleja, Teresa and Sorkine-Hurnung, Olga},
 title = {Computational Pattern Making from 3D Garment Models
 },
 year = {2022},
